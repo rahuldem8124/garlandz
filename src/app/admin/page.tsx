@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 
 // ==============================================================
-// DRAGGABLE MODAL COMPONENT WRAPPER (NO DEPENDENCIES)
+// DRAGGABLE POP-OUT COMPONENT WRAPPER (NON-BLOCKING OVERLAY)
 // ==============================================================
 interface DraggableModalProps {
   onClose: () => void;
@@ -64,11 +64,16 @@ function DraggableModal({ onClose, title, children, maxWidth = "520px" }: Dragga
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Drag only with left-click on the header handle
     if (e.button !== 0) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
     e.preventDefault();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    const touch = e.touches[0];
+    setDragStart({ x: touch.clientX - position.x, y: touch.clientY - position.y });
   };
 
   useEffect(() => {
@@ -80,17 +85,34 @@ function DraggableModal({ onClose, title, children, maxWidth = "520px" }: Dragga
       });
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      setPosition({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y
+      });
+    };
+
     const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleTouchEnd = () => {
       setIsDragging(false);
     };
 
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("touchmove", handleTouchMove, { passive: true });
+      window.addEventListener("touchend", handleTouchEnd);
     }
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     };
   }, [isDragging, dragStart]);
 
@@ -122,6 +144,7 @@ function DraggableModal({ onClose, title, children, maxWidth = "520px" }: Dragga
         {/* Header Drag Handle */}
         <div 
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
           style={{
             padding: "20px 24px",
             borderBottom: "1px solid rgba(198, 161, 91, 0.2)",
@@ -220,7 +243,6 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     vendors,
     notifications,
     automationLogs,
-    additionalServices,
     addBooking,
     updateBooking,
     deleteBooking,
@@ -228,15 +250,10 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     addLead,
     updateLeadStatus, 
     deleteLead,
-    addLeadFollowUp, 
-    convertLeadToBooking,
-    updateSiteVisitStatus,
-    updateSpacePricing,
     addSpace,
     updateSpaceDetails,
     deleteSpace,
-    isPremiumDate,
-    checkDateAvailability
+    convertLeadToBooking
   } = useGaarlandz();
 
   // Navigation Sidebar States
@@ -247,7 +264,17 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
   >("overview");
 
   const [sidebarCollapsible, setSidebarCollapsible] = useState(false);
-  const [globalQuery, setGlobalQuery] = useState("");
+  
+  // Dynamic Mobile Responsive Hooks
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // ==========================================
   // STATE MANAGEMENT UPGRADES
@@ -423,9 +450,6 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
   const [calcPhotography, setCalcPhotography] = useState(35000);
   const [calcServicesSelected, setCalcServicesSelected] = useState<string[]>(["srv-valet"]);
 
-  const [selectedBookingForInvoice, setSelectedBookingForInvoice] = useState<Booking | null>(null);
-
-  // Sidebar link items (Exact 15 Items now that orders is merged)
   const sidebarLinks = [
     { id: "overview", label: "Overview", icon: Sliders },
     { id: "calendar", label: "Celebration Calendar", icon: Calendar },
@@ -444,19 +468,18 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     { id: "settings", label: "Settings", icon: Sliders }
   ];
 
-  // Overview calculations
+  // Calculations
   const totalGrossRevenue = bookings.reduce((sum, b) => sum + b.pricing.total, 0) + detailedPayments.reduce((s, p) => s + p.amount, 0) * 0.18;
   const totalPaymentsReceived = bookings.reduce((sum, b) => sum + b.pricing.advancePaid, 0) + detailedPayments.reduce((s, p) => s + p.amount, 0);
   const totalPendingPayments = bookings.reduce((sum, b) => sum + b.pricing.remainingBalance, 0);
 
-  // Cost calculator estimates
+  // Estimates
   const estBase = spaces.find(s => s.id === calcSpace)?.basePrice || 150000;
   const estFood = calcGuests * calcCatering;
   const estSubtotal = estBase + estFood + calcDecor + calcPhotography + (calcServicesSelected.length * 15000);
   const estTax = Math.round(estSubtotal * 0.18);
   const estTotal = estSubtotal + estTax;
 
-  // Actions handlers
   const handleBlockDate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!blockDate || !blockLabel) return;
@@ -506,13 +529,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
         alert(`Error: ${result.error}`);
       }
     }
-
     setShowBookingModal(false);
-    // Reset
-    setBookingCustName("");
-    setBookingPhone("");
-    setBookingEmail("");
-    setBookingDate("");
   };
 
   const startEditBooking = (b: Booking) => {
@@ -533,18 +550,8 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     if (!leadCustName || !leadPhone || !leadEmail || !leadDate) return;
 
     if (editingLead) {
-      // Modify Lead in place
       const updated = leads.map(l => l.id === editingLead.id ? {
-        ...l,
-        name: leadCustName,
-        phone: leadPhone,
-        email: leadEmail,
-        preferredDate: leadDate,
-        guestCount: leadGuests,
-        eventType: leadType,
-        preferredSpaceId: leadSpaceId,
-        preferredSession: leadSession,
-        requirements: leadRequirements
+        ...l, name: leadCustName, phone: leadPhone, email: leadEmail, preferredDate: leadDate, guestCount: leadGuests, eventType: leadType, preferredSpaceId: leadSpaceId, preferredSession: leadSession, requirements: leadRequirements
       } : l);
       alert("Lead updated successfully!");
       setEditingLead(null);
@@ -563,13 +570,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
       });
       alert("New operational lead inquiry logged successfully!");
     }
-
     setShowLeadModal(false);
-    setLeadCustName("");
-    setLeadPhone("");
-    setLeadEmail("");
-    setLeadDate("");
-    setLeadRequirements("");
   };
 
   const startEditLead = (l: Lead) => {
@@ -592,30 +593,17 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
 
     if (editingSpace) {
       updateSpaceDetails(editingSpace.id, {
-        name: spaceName,
-        capacity: spaceCapacity,
-        basePrice: spacePrice,
-        description: spaceDesc,
-        image: spaceImg,
-        category: spaceCategory
+        name: spaceName, capacity: spaceCapacity, basePrice: spacePrice, description: spaceDesc, image: spaceImg, category: spaceCategory
       });
       setEditingSpace(null);
       alert("Venue space details successfully updated and propagated!");
     } else {
       addSpace({
-        name: spaceName,
-        capacity: spaceCapacity,
-        basePrice: spacePrice,
-        description: spaceDesc,
-        image: spaceImg,
-        category: spaceCategory
+        name: spaceName, capacity: spaceCapacity, basePrice: spacePrice, description: spaceDesc, image: spaceImg, category: spaceCategory
       });
       alert("New luxury venue space successfully created!");
     }
     setShowSpaceModal(false);
-    setSpaceName("");
-    setSpaceDesc("");
-    setSpacePrice(120000);
   };
 
   const startEditSpace = (s: VenueSpace) => {
@@ -641,20 +629,11 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
       alert("Workflow milestone task successfully updated!");
     } else {
       setWorkflowTasks([...workflowTasks, {
-        id: `DL-${Math.floor(105 + Math.random() * 900)}`,
-        eventName: wfEvent,
-        daysBefore: wfDays,
-        desc: wfDesc,
-        date: wfDate,
-        status: wfStatus,
-        urgency: wfUrgency
+        id: `DL-${Math.floor(105 + Math.random() * 900)}`, eventName: wfEvent, daysBefore: wfDays, desc: wfDesc, date: wfDate, status: wfStatus, urgency: wfUrgency
       }]);
       alert("New critical deadline milestone logged in dispatcher timeline!");
     }
     setShowWorkflowModal(false);
-    setWfEvent("");
-    setWfDesc("");
-    setWfDate("");
   };
 
   const startEditWf = (t: any) => {
@@ -680,19 +659,11 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
       alert("Bridal Suite operational details successfully updated!");
     } else {
       setBridalSuites([...bridalSuites, {
-        id: `BS-${Math.floor(104 + Math.random() * 900)}`,
-        name: bridalName,
-        conditionStatus: bridalCondition,
-        roomsBooked: bridalRooms,
-        butler: bridalButler,
-        notes: bridalNotes
+        id: `BS-${Math.floor(104 + Math.random() * 900)}`, name: bridalName, conditionStatus: bridalCondition, roomsBooked: bridalRooms, butler: bridalButler, notes: bridalNotes
       }]);
       alert("New 5-star Bridal Suite alignment successfully logged!");
     }
     setShowBridalModal(false);
-    setBridalName("");
-    setBridalButler("");
-    setBridalNotes("");
   };
 
   const startEditBridal = (s: any) => {
@@ -717,20 +688,11 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
       alert("Kids zone attendant registry successfully updated!");
     } else {
       setKidsZones([...kidsZones, {
-        id: `KZ-${Math.floor(104 + Math.random() * 900)}`,
-        activityName: kidsActivity,
-        attendantName: kidsAttendant,
-        capacity: kidsCapacity,
-        safetyStatus: kidsSafety,
-        status: kidsStatus,
-        notes: kidsNotes
+        id: `KZ-${Math.floor(104 + Math.random() * 900)}`, activityName: kidsActivity, attendantName: kidsAttendant, capacity: kidsCapacity, safetyStatus: kidsSafety, status: kidsStatus, notes: kidsNotes
       }]);
       alert("New Kids play zone registry logged successfully!");
     }
     setShowKidsModal(false);
-    setKidsActivity("");
-    setKidsAttendant("");
-    setKidsNotes("");
   };
 
   const startEditKids = (z: any) => {
@@ -758,12 +720,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
       date: payDate,
       status: payStatus
     }]);
-
     setShowPaymentModal(false);
-    setPayCustName("");
-    setPayBookingId("");
-    setPayAmount(0);
-    setPayRef("");
     alert("New payment transaction successfully logged in financial ledgers!");
   };
 
@@ -784,73 +741,76 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     };
     setProcureOrders([newOrd, ...procureOrders]);
     setShowOrderModal(false);
-    setNewOrderVendor("");
-    setNewOrderItems("");
-    setNewOrderQty(1);
-    setNewOrderDate("");
-    alert("New procurement order dispatched and logged inside Decor Supply Chain!");
+    alert("New procurement order dispatched inside Decor Supply Chain!");
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--bg-cream)", overflow: "hidden", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", minHeight: "100vh", backgroundColor: "var(--bg-cream)", overflow: "hidden", width: "100%" }}>
       
       {/* ==============================================================
-          LEFT SECURED GLASS SIDEBAR PANEL
+          LEFT SECURED GLASS SIDEBAR PANEL (RESPONSIVE HORIZONTAL SWIPE FOR MOBILE)
           ============================================================== */}
       <aside style={{
-        width: sidebarCollapsible ? "80px" : "280px",
+        width: isMobile ? "100%" : (sidebarCollapsible ? "80px" : "280px"),
+        height: isMobile ? "auto" : "100vh",
         backgroundColor: "rgba(255, 255, 255, 0.9)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
         color: "#171717",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: isMobile ? "row" : "column",
         transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-        borderRight: "1px solid rgba(198, 161, 91, 0.35)",
+        borderRight: isMobile ? "none" : "1px solid rgba(198, 161, 91, 0.35)",
+        borderBottom: isMobile ? "1px solid rgba(198, 161, 91, 0.2)" : "none",
         flexShrink: 0,
         zIndex: 30,
         position: "relative",
         boxShadow: "0 8px 30px rgba(0, 0, 0, 0.04)"
       }}>
         {/* Header Title */}
-        <div style={{
-          padding: "24px",
-          borderBottom: "1px solid rgba(198, 161, 91, 0.2)",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          overflow: "hidden",
-          whiteSpace: "nowrap"
-        }}>
+        {!isMobile && (
           <div style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "50%",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #C6A15B",
+            padding: "24px",
+            borderBottom: "1px solid rgba(198, 161, 91, 0.2)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0
+            gap: "12px",
+            overflow: "hidden",
+            whiteSpace: "nowrap"
           }}>
-            <Flower size={18} color="#C6A15B" />
-          </div>
-          {!sidebarCollapsible && (
-            <div>
-              <span style={{ fontSize: "0.85rem", fontWeight: "700", display: "block", letterSpacing: "0.05em", color: "#171717" }}>GAARLANDZ OS</span>
-              <span style={{ fontSize: "0.55rem", textTransform: "uppercase", color: "#C6A15B", letterSpacing: "0.15em", fontWeight: "700" }}>Secured Operations</span>
+            <div style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #C6A15B",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0
+            }}>
+              <Flower size={18} color="#C6A15B" />
             </div>
-          )}
-        </div>
+            {!sidebarCollapsible && (
+              <div>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", display: "block", letterSpacing: "0.05em", color: "#171717" }}>GAARLANDZ OS</span>
+                <span style={{ fontSize: "0.55rem", textTransform: "uppercase", color: "#C6A15B", letterSpacing: "0.15em", fontWeight: "700" }}>Secured Operations</span>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Navigation Sidebar List */}
+        {/* Navigation Sidebar List (Horizontal scroll menu on mobile screen) */}
         <nav style={{
           flex: 1,
-          overflowY: "auto",
-          padding: "16px 10px",
+          overflowY: isMobile ? "hidden" : "auto",
+          overflowX: isMobile ? "auto" : "hidden",
+          padding: isMobile ? "8px" : "16px 10px",
           display: "flex",
-          flexDirection: "column",
-          gap: "4px"
+          flexDirection: isMobile ? "row" : "column",
+          gap: "4px",
+          width: "100%",
+          whiteSpace: "nowrap"
         }}>
           {sidebarLinks.map((link) => {
             const isActive = activeAdminSubTab === link.id;
@@ -861,32 +821,29 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                 onClick={() => setActiveAdminSubTab(link.id as any)}
                 className="sidebar-nav-btn"
                 style={{
-                  width: "100%",
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 14px",
+                  gap: "10px",
+                  padding: isMobile ? "8px 14px" : "12px 14px",
                   borderRadius: "14px",
                   border: "none",
-                  borderLeft: isActive ? "4px solid #C6A15B" : "4px solid transparent",
+                  borderLeft: (!isMobile && isActive) ? "4px solid #C6A15B" : "4px solid transparent",
+                  borderBottom: (isMobile && isActive) ? "3px solid #C6A15B" : "3px solid transparent",
                   backgroundColor: isActive ? "rgba(198, 161, 91, 0.08)" : "transparent",
                   color: isActive ? "#171717" : "#5A5A5A",
                   cursor: "pointer",
-                  textAlign: "left"
+                  flexShrink: 0
                 }}
                 title={link.label}
               >
-                <LinkIcon size={18} color={isActive ? "#C6A15B" : "#5A5A5A"} style={{ flexShrink: 0 }} />
-                {!sidebarCollapsible && (
+                <LinkIcon size={16} color={isActive ? "#C6A15B" : "#5A5A5A"} style={{ flexShrink: 0 }} />
+                {(!sidebarCollapsible || isMobile) && (
                   <span style={{
-                    fontSize: "0.75rem",
+                    fontSize: "0.7rem",
                     fontWeight: isActive ? "700" : "500",
                     fontFamily: "var(--font-sans)",
                     textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
+                    letterSpacing: "0.05em"
                   }}>
                     {link.label}
                   </span>
@@ -896,56 +853,58 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
           })}
         </nav>
 
-        {/* Footer controls & Collapsible Switch */}
-        <div style={{
-          padding: "16px",
-          borderTop: "1px solid rgba(198, 161, 91, 0.2)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px"
-        }}>
-          <button
-            onClick={() => setSidebarCollapsible(!sidebarCollapsible)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#5A5A5A",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              fontWeight: "600",
-              opacity: 0.8
-            }}
-          >
-            {sidebarCollapsible ? <ArrowRight size={16} /> : <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><ChevronLeft size={16} /> Collapse Menu</span>}
-          </button>
-          
-          <button
-            onClick={onLogout}
-            style={{
-              backgroundColor: "rgba(244, 67, 54, 0.08)",
-              border: "1px solid rgba(244, 67, 54, 0.3)",
-              color: "#F44336",
-              padding: "10px",
-              borderRadius: "12px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              fontWeight: "700"
-            }}
-          >
-            <LogOut size={14} color="#F44336" />
-            {!sidebarCollapsible && "Exit Console"}
-          </button>
-        </div>
+        {/* Footer controls */}
+        {!isMobile && (
+          <div style={{
+            padding: "16px",
+            borderTop: "1px solid rgba(198, 161, 91, 0.2)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px"
+          }}>
+            <button
+              onClick={() => setSidebarCollapsible(!sidebarCollapsible)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#5A5A5A",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                fontSize: "0.7rem",
+                textTransform: "uppercase",
+                fontWeight: "600",
+                opacity: 0.8
+              }}
+            >
+              {sidebarCollapsible ? <ArrowRight size={16} /> : <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><ChevronLeft size={16} /> Collapse Menu</span>}
+            </button>
+            
+            <button
+              onClick={onLogout}
+              style={{
+                backgroundColor: "rgba(244, 67, 54, 0.08)",
+                border: "1px solid rgba(244, 67, 54, 0.3)",
+                color: "#F44336",
+                padding: "10px",
+                borderRadius: "12px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                fontSize: "0.7rem",
+                textTransform: "uppercase",
+                fontWeight: "700"
+              }}
+            >
+              <LogOut size={14} color="#F44336" />
+              {!sidebarCollapsible && "Exit Console"}
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* ==============================================================
@@ -956,14 +915,14 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
         display: "flex",
         flexDirection: "column",
         overflowY: "auto",
-        height: "100vh"
+        height: isMobile ? "auto" : "100vh"
       }}>
         
         {/* Top Control Bar */}
         <header style={{
           backgroundColor: "#FFFFFF",
           borderBottom: "1px solid rgba(198, 161, 91, 0.2)",
-          padding: "16px 32px",
+          padding: isMobile ? "16px 20px" : "16px 32px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -992,15 +951,22 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               }}>
                 G
               </div>
-              <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#171717" }}>Gaarlandz Expert</span>
-                <span style={{ fontSize: "0.55rem", color: "#5A5A5A", textTransform: "uppercase" }}>Console Manager</span>
-              </div>
+              {!isMobile && (
+                <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+                  <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#171717" }}>Gaarlandz Expert</span>
+                  <span style={{ fontSize: "0.55rem", color: "#5A5A5A", textTransform: "uppercase" }}>Console Manager</span>
+                </div>
+              )}
             </div>
+            {isMobile && (
+              <button onClick={onLogout} style={{ background: "none", border: "none", color: "#F44336", cursor: "pointer" }}>
+                <LogOut size={20} />
+              </button>
+            )}
           </div>
         </header>
 
-        <div style={{ padding: "40px", flex: 1, width: "100%" }}>
+        <div style={{ padding: isMobile ? "24px 16px" : "40px", flex: 1, width: "100%" }}>
           
           {/* ==============================================================
               1. OVERVIEW DASHBOARD
@@ -1046,7 +1012,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               </div>
 
               {/* Occupancy and Activities log */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "32px" }}>
                 <div className="luxury-card">
                   <h3 style={{ fontSize: "1.1rem", borderBottom: "1px solid rgba(198,161,91,0.2)", paddingBottom: "10px", marginBottom: "16px" }}>Automation Log</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "250px", overflowY: "auto" }}>
@@ -1059,7 +1025,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                   </div>
                 </div>
 
-                <div className="luxury-card" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                <div className="luxury-card" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "40px 20px" }}>
                   <strong style={{ fontSize: "3.2rem", color: "#C6A15B", fontFamily: "var(--font-serif)" }}>84%</strong>
                   <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#5A5A5A", letterSpacing: "0.05em" }}>Operational Capacity Occupied</span>
                 </div>
@@ -1072,7 +1038,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ============================================================== */}
           {activeAdminSubTab === "calendar" && (
             <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", marginBottom: "20px" }}>
                 <div>
                   <h3 style={{ fontSize: "1.5rem" }}>Celebration Calendar</h3>
                   <p style={{ color: "#5A5A5A", fontSize: "0.85rem" }}>Review locked dates, manually block administrative slots, and configure premium pricing dates.</p>
@@ -1082,8 +1048,8 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                 </button>
               </div>
               
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "10px", textAlign: "center", marginBottom: "32px" }}>
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(4, 1fr)" : "repeat(7, 1fr)", gap: "10px", textAlign: "center", marginBottom: "32px" }}>
+                {!isMobile && ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
                   <strong key={d} style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#5A5A5A" }}>{d}</strong>
                 ))}
                 {Array.from({ length: 30 }).map((_, idx) => {
@@ -1116,16 +1082,16 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                     title="Click to toggle premium date status"
                     >
                       <span style={{ fontSize: "0.75rem", fontWeight: "700" }}>{day}</span>
-                      {hasBooking && <span style={{ fontSize: "0.55rem", backgroundColor: "#C6A15B", color: "#fff", padding: "2px 4px", borderRadius: "4px" }}>Secured</span>}
-                      {isCustomBlocked && <span style={{ fontSize: "0.55rem", backgroundColor: "#F44336", color: "#fff", padding: "2px 4px", borderRadius: "4px" }}>Blocked</span>}
-                      {isPremium && !hasBooking && !isCustomBlocked && <span style={{ fontSize: "0.55rem", backgroundColor: "#E0A96D", color: "#fff", padding: "2px 4px", borderRadius: "4px" }}>Premium</span>}
+                      {hasBooking && <span style={{ fontSize: "0.55rem", backgroundColor: "#C6A15B", color: "#fff", padding: "2px 4px", borderRadius: "4px", width: "fit-content" }}>Secured</span>}
+                      {isCustomBlocked && <span style={{ fontSize: "0.55rem", backgroundColor: "#F44336", color: "#fff", padding: "2px 4px", borderRadius: "4px", width: "fit-content" }}>Blocked</span>}
+                      {isPremium && !hasBooking && !isCustomBlocked && <span style={{ fontSize: "0.55rem", backgroundColor: "#E0A96D", color: "#fff", padding: "2px 4px", borderRadius: "4px", width: "fit-content" }}>Premium</span>}
                     </div>
                   );
                 })}
               </div>
 
               {/* Blocked and Premium Management Panels */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "24px" }}>
                 <div className="luxury-card">
                   <h4 style={{ fontSize: "1rem", marginBottom: "14px", borderBottom: "1px solid rgba(0,0,0,0.05)", paddingBottom: "8px" }}>Active Custom Blocks</h4>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -1179,7 +1145,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ============================================================== */}
           {activeAdminSubTab === "bookings" && (
             <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", marginBottom: "20px" }}>
                 <div>
                   <h3 style={{ fontSize: "1.5rem" }}>Booking Management Ledger</h3>
                   <p style={{ color: "#5A5A5A", fontSize: "0.85rem" }}>Administrative register to control locked bookings, edit client schedules, and discharge accounts.</p>
@@ -1190,7 +1156,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               </div>
               
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", minWidth: isMobile ? "650px" : "auto" }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
                       <th style={{ padding: "12px", textAlign: "left" }}>Booking ID</th>
@@ -1313,7 +1279,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ============================================================== */}
           {activeAdminSubTab === "leads" && (
             <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", marginBottom: "20px" }}>
                 <div>
                   <h3 style={{ fontSize: "1.5rem" }}>Venue Inquiries CRM</h3>
                   <p style={{ color: "#5A5A5A", fontSize: "0.85rem" }}>Monitor client-side website callback logs, negotiate contract deals, and sync reservations.</p>
@@ -1324,7 +1290,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               </div>
               
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", minWidth: isMobile ? "650px" : "auto" }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
                       <th style={{ padding: "12px", textAlign: "left" }}>Lead ID</th>
@@ -1571,7 +1537,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                   {/* Task Register Table */}
                   <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
                     <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem", minWidth: isMobile ? "600px" : "auto" }}>
                         <thead>
                           <tr style={{ backgroundColor: "rgba(198,161,91,0.04)", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
                             <th style={{ padding: "12px 16px", textAlign: "left" }}>Event</th>
@@ -1616,13 +1582,13 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ) : (
                 <>
                   {/* Embedded Orders and Procurement */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center" }}>
                     <h4 style={{ fontSize: "1.1rem" }}>Decor Materials Procurement Ledger</h4>
                     <button onClick={() => setShowOrderModal(true)} className="luxury-btn-primary" style={{ flexShrink: 0 }}><Plus size={16} /> Deploy Procurement Order</button>
                   </div>
                   <div className="luxury-card" style={{ padding: 0 }}>
                     <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", minWidth: isMobile ? "650px" : "auto" }}>
                         <thead>
                           <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
                             <th style={{ padding: "12px", textAlign: "left" }}>Order ID</th>
@@ -1754,7 +1720,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               {/* Main Table */}
               <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem", minWidth: isMobile ? "600px" : "auto" }}>
                     <thead>
                       <tr style={{ backgroundColor: "rgba(198,161,91,0.04)", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
                         <th style={{ padding: "12px 16px", textAlign: "left" }}>Event</th>
@@ -1779,7 +1745,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                               <div style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.07)", height: "7px", borderRadius: "4px", overflow: "hidden" }}>
                                 <div style={{ width: `${c.readiness}%`, backgroundColor: c.readiness >= 75 ? "#28A745" : c.readiness >= 40 ? "#C6A15B" : "#F44336", height: "7px", borderRadius: "4px" }} />
                               </div>
-                              <span style={{ fontSize: "0.7rem", fontWeight: "700" }}>{c.readiness}%</span>
+                              <span style={{ fontSize: "0.7rm", fontWeight: "700" }}>{c.readiness}%</span>
                             </div>
                           </td>
                           <td style={{ padding: "14px 16px", textAlign: "center" }}>
@@ -1851,7 +1817,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               {/* Table */}
               <div className="luxury-card" style={{ padding: 0 }}>
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", minWidth: isMobile ? "600px" : "auto" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)", backgroundColor: "rgba(198,161,91,0.03)" }}>
                         <th style={{ padding: "12px", textAlign: "left" }}>Shoot ID</th>
@@ -1916,7 +1882,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ============================================================== */}
           {activeAdminSubTab === "bridal_amenities" && (
             <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", marginBottom: "20px" }}>
                 <div>
                   <h3 style={{ fontSize: "1.5rem" }}>Bride & Groom Luxurious Suites Register</h3>
                   <p style={{ color: "#5A5A5A", fontSize: "0.85rem" }}>Configure dressing room keys, valet allocations, VIP hospitality services and suite preparation readiness indicators.</p>
@@ -2107,7 +2073,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ============================================================== */}
           {activeAdminSubTab === "deadlines" && (
             <div className="fade-in-reveal" style={{ display: "flex", flexDirection: "column", gap: "32px", textAlign: "left" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center" }}>
                 <div>
                   <h2 style={{ fontSize: "2rem", color: "#171717", fontFamily: "var(--font-serif)" }}>Deadlines & Workflow Center</h2>
                   <p style={{ color: "#5A5A5A", fontSize: "0.85rem" }}>Auto-generated event schedules scaled to lock dates.</p>
@@ -2118,7 +2084,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               {/* Workflow Tasks Table */}
               <div className="luxury-card">
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", minWidth: isMobile ? "650px" : "auto" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
                         <th style={{ padding: "12px", textAlign: "left" }}>Event Name</th>
@@ -2225,7 +2191,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               ============================================================== */}
           {activeAdminSubTab === "payments" && (
             <div className="fade-in-reveal" style={{ display: "flex", flexDirection: "column", gap: "32px", textAlign: "left" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center" }}>
                 <div>
                   <h2 style={{ fontSize: "2.1rem", color: "#171717", fontFamily: "var(--font-serif)" }}>Payments & Finance Center</h2>
                   <p style={{ color: "#5A5A5A", fontSize: "0.85rem" }}>Examine financial balance status, verify transaction reference indexes, and log manual payments.</p>
@@ -2255,7 +2221,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               <div className="luxury-card">
                 <h3 style={{ fontSize: "1.1rem", marginBottom: "16px", borderBottom: "1px solid rgba(0,0,0,0.05)", paddingBottom: "10px" }}>Detailed Transactions History Ledger (Click row to see details)</h3>
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", minWidth: isMobile ? "550px" : "auto" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
                         <th style={{ padding: "12px", textAlign: "left" }}>Transaction ID</th>
@@ -2401,7 +2367,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               <h3 style={{ fontSize: "1.5rem", marginBottom: "8px" }}>Event Cost Calculator Widget</h3>
               <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginBottom: "24px" }}>Estimate dynamic costs instantly. No external spreadsheets needed.</p>
               
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "40px" }}>
                 <form style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div>
                     <label style={{ fontSize: "0.7rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Select Venue Space</label>
@@ -2439,7 +2405,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                 </form>
 
                 {/* Estimate Result Panel */}
-                <div style={{ backgroundColor: "#FAF9F5", padding: "30px", borderRadius: "20px", border: "2px solid #C6A15B", display: "flex", flexDirection: "column", justifySelf: "space-between" }}>
+                <div style={{ backgroundColor: "#FAF9F5", padding: "30px", borderRadius: "20px", border: "2px solid #C6A15B", display: "flex", flexDirection: "column", justifySelf: "space-between", minHeight: isMobile ? "auto" : "320px" }}>
                   <div>
                     <span style={{ fontSize: "0.65rem", color: "#5A5A5A", textTransform: "uppercase" }}>Estimated Total Cost Proposal</span>
                     <strong style={{ display: "block", fontSize: "2rem", color: "#171717", marginTop: "4px" }}>₹{estTotal.toLocaleString()}</strong>
