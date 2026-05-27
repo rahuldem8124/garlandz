@@ -181,6 +181,9 @@ interface GaarlandzContextType {
   updateSpacePricing: (spaceId: string, newBasePrice: number, newCapacity: number) => void;
   addSpace: (space: Omit<VenueSpace, "id">) => void;
   updateSpaceDetails: (spaceId: string, updatedFields: Partial<VenueSpace>) => void;
+  deleteSpace: (id: string) => void;
+  deleteBooking: (id: string) => void;
+  deleteLead: (id: string) => void;
   
   addVendor: (vendor: Omit<Vendor, "id">) => void;
   updateVendorStatus: (id: string, status: Vendor["status"]) => void;
@@ -1313,6 +1316,60 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   };
 
+  const deleteSpace = (spaceId: string) => {
+    const updatedSpaces = spaces.filter((s) => s.id !== spaceId);
+    setSpaces(updatedSpaces);
+    syncToLocalStorage(
+      updatedSpaces,
+      bookings,
+      leads,
+      siteVisits,
+      operations,
+      staff,
+      vendors,
+      documents,
+      budgets,
+      notifications,
+      automationLogs
+    );
+  };
+
+  const deleteBooking = (bookingId: string) => {
+    const updated = bookings.filter((b) => b.id !== bookingId);
+    setBookings(updated);
+    syncToLocalStorage(
+      spaces,
+      updated,
+      leads,
+      siteVisits,
+      operations,
+      staff,
+      vendors,
+      documents,
+      budgets,
+      notifications,
+      automationLogs
+    );
+  };
+
+  const deleteLead = (leadId: string) => {
+    const updated = leads.filter((l) => l.id !== leadId);
+    setLeads(updated);
+    syncToLocalStorage(
+      spaces,
+      bookings,
+      updated,
+      siteVisits,
+      operations,
+      staff,
+      vendors,
+      documents,
+      budgets,
+      notifications,
+      automationLogs
+    );
+  };
+
   // ==========================================
   // STAFF & VENDOR MANAGEMENT
   // ==========================================
@@ -1606,6 +1663,9 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateSpacePricing,
         addSpace,
         updateSpaceDetails,
+        deleteSpace,
+        deleteBooking,
+        deleteLead,
         addVendor,
         updateVendorStatus,
         addStaff,
