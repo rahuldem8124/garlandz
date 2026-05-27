@@ -71,8 +71,11 @@ export default function SecuredVenueOSPortal() {
 
   if (validatingSession) {
     return (
-      <div style={{ backgroundColor: "var(--bg-cream)", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <h3 style={{ color: "#171717", fontFamily: "var(--font-serif)" }}>Validating Console Authorization...</h3>
+      <div style={{ backgroundColor: "var(--bg-cream)", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+        <h3 className="cinematic-text-reveal" style={{ color: "#171717", fontFamily: "var(--font-serif)", fontSize: "1.45rem", letterSpacing: "0.02em" }}>Validating Console Authorization</h3>
+        <div style={{ width: "220px", height: "3px" }} className="luxury-skeleton">
+          <div className="luxury-skeleton-accent" style={{ margin: 0, height: "100%", width: "70px" }} />
+        </div>
       </div>
     );
   }
@@ -117,12 +120,15 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     notifications,
     automationLogs,
     additionalServices,
+    updateBooking,
     updateBookingStatus, 
     updateLeadStatus, 
     addLeadFollowUp, 
     convertLeadToBooking,
     updateSiteVisitStatus,
     updateSpacePricing,
+    addSpace,
+    updateSpaceDetails,
     isPremiumDate,
     checkDateAvailability,
     addVendor,
@@ -201,12 +207,66 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     { id: "DT-01", event: "Rahul Wedding", materials: "White Roses, Golden Mandap", deadline: "2026-06-24", budget: 45000, staff: "Ramesh Selvan + 4", progress: 65, status: "Preparing" },
     { id: "DT-02", event: "Corporate Banquet", materials: "Stage Backdrop Screen, Mic Stands", deadline: "2026-06-20", budget: 20000, staff: "Ramesh Selvan + 2", progress: 90, status: "Setup Started" }
   ]);
+  const [showDecorModal, setShowDecorModal] = useState(false);
+  const [newDecorEvent, setNewDecorEvent] = useState("");
+  const [newDecorMaterials, setNewDecorMaterials] = useState("");
+  const [newDecorDeadline, setNewDecorDeadline] = useState("");
+  const [newDecorBudget, setNewDecorBudget] = useState(0);
+  const [newDecorStaff, setNewDecorStaff] = useState("");
+  const [newDecorProgress, setNewDecorProgress] = useState(0);
+  const [newDecorStatus, setNewDecorStatus] = useState("Preparing");
 
   // CATERING TEAM STATE
   const [cateringTasks, setCateringTasks] = useState([
     { id: "CT-01", event: "Rahul Wedding", guests: 500, menu: "Royal South Indian & Continental Buffet", chef: "Chef Murugan", stage: "Ingredients Procurement", readiness: 40 },
     { id: "CT-02", event: "Corporate Buffet", guests: 250, menu: "Executive Lunch & Evening High Tea", chef: "Chef Karthik", stage: "Menu Finalized", readiness: 15 }
   ]);
+  const [showCateringModal, setShowCateringModal] = useState(false);
+  const [newCateringEvent, setNewCateringEvent] = useState("");
+  const [newCateringGuests, setNewCateringGuests] = useState(100);
+  const [newCateringMenu, setNewCateringMenu] = useState("");
+  const [newCateringChef, setNewCateringChef] = useState("");
+  const [newCateringStage, setNewCateringStage] = useState("Menu Finalized");
+  const [newCateringReadiness, setNewCateringReadiness] = useState(0);
+
+  // PHOTOGRAPHY TEAM STATE
+  const [photoShoots, setPhotoShoots] = useState([
+    { id: "PS-01", title: "Rahul Wedding Shoot", date: "2026-06-24", details: "Drone cinematic layout + 2 Candid Photographers", type: "Wedding" },
+    { id: "PS-02", title: "TechCorp Executive Group Shoot", date: "2026-06-20", details: "Stage projection group layout", type: "Corporate" }
+  ]);
+  const [photoTrails, setPhotoTrails] = useState([
+    { id: "PT-01", name: "Sunset Pavilion Trail", status: "Ready" },
+    { id: "PT-02", name: "Cascading Floral Swing", status: "Ready" },
+    { id: "PT-03", name: "Lantern Walkway Spots", status: "Setup In Progress" }
+  ]);
+  const [showPhotoShootModal, setShowPhotoShootModal] = useState(false);
+  const [showPhotoTrailModal, setShowPhotoTrailModal] = useState(false);
+  const [newPhotoTitle, setNewPhotoTitle] = useState("");
+  const [newPhotoDate, setNewPhotoDate] = useState("");
+  const [newPhotoDetails, setNewPhotoDetails] = useState("");
+  const [newPhotoType, setNewPhotoType] = useState("Wedding");
+  const [newTrailName, setNewTrailName] = useState("");
+  const [newTrailStatus, setNewTrailStatus] = useState("Ready");
+
+  // VENUE SPACES INTERACTIVE STATE
+  const [isAddingSpace, setIsAddingSpace] = useState(false);
+  const [editingSpaceId, setEditingSpaceId] = useState<string | null>(null);
+
+  // New venue form fields
+  const [newName, setNewName] = useState("");
+  const [newCapacity, setNewCapacity] = useState(500);
+  const [newBasePrice, setNewBasePrice] = useState(100000);
+  const [newDescription, setNewDescription] = useState("");
+  const [newImage, setNewImage] = useState("https://images.unsplash.com/photo-1519741497674-611481863552");
+  const [newCategory, setNewCategory] = useState("wedding");
+
+  // Edit venue form fields
+  const [editName, setEditName] = useState("");
+  const [editCapacity, setEditCapacity] = useState(500);
+  const [editBasePrice, setEditBasePrice] = useState(100000);
+  const [editDescription, setEditDescription] = useState("");
+  const [editImage, setEditImage] = useState("");
+  const [editCategory, setEditCategory] = useState("");
 
   // Sidebar link items (Exact 16 Items matching requirements)
   const sidebarLinks = [
@@ -254,6 +314,79 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
   const estSubtotal = estBase + estFood + calcDecor + calcPhotography + (calcServicesSelected.length * 15000);
   const estTax = Math.round(estSubtotal * 0.18);
   const estTotal = estSubtotal + estTax;
+
+  // VENUE SPACES INTERACTIVE ACTIONS
+  const handleCreateSpace = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName || !newDescription) return;
+    addSpace({
+      name: newName,
+      capacity: newCapacity,
+      basePrice: newBasePrice,
+      description: newDescription,
+      image: newImage,
+      category: newCategory
+    });
+    setIsAddingSpace(false);
+    // Reset inputs
+    setNewName("");
+    setNewCapacity(500);
+    setNewBasePrice(100000);
+    setNewDescription("");
+    setNewImage("https://images.unsplash.com/photo-1519741497674-611481863552");
+    setNewCategory("wedding");
+    alert("New venue space added successfully! Automatically propagated to client-side booking engine.");
+  };
+
+  const startEditingSpace = (sp: any) => {
+    setEditingSpaceId(sp.id);
+    setEditName(sp.name);
+    setEditCapacity(sp.capacity);
+    setEditBasePrice(sp.basePrice);
+    setEditDescription(sp.description);
+    setEditImage(sp.image);
+    setEditCategory(sp.category);
+  };
+
+  const handleUpdateSpace = (e: React.FormEvent, spaceId: string) => {
+    e.preventDefault();
+    updateSpaceDetails(spaceId, {
+      name: editName,
+      capacity: editCapacity,
+      basePrice: editBasePrice,
+      description: editDescription,
+      image: editImage,
+      category: editCategory
+    });
+    setEditingSpaceId(null);
+    alert("Venue details updated successfully! Sync complete.");
+  };
+
+  // PAYMENTS & FINANCE ACTIONS
+  const handleRecordClientPayment = (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+    const updatedBooking = {
+      ...booking,
+      pricing: {
+        ...booking.pricing,
+        advancePaid: booking.pricing.total,
+        remainingBalance: 0
+      }
+    };
+    updateBooking(updatedBooking);
+    alert(`Client payment of ₹${booking.pricing.remainingBalance.toLocaleString()} recorded successfully for booking ${bookingId}! Remaining balance has been fully settled.`);
+  };
+
+  const handleProcessVendorPayout = (vpId: string) => {
+    setVendorPayments(vendorPayments.map(vp => 
+      vp.id === vpId ? { ...vp, status: "Paid" } : vp
+    ));
+    const vp = vendorPayments.find(v => v.id === vpId);
+    if (vp) {
+      alert(`Payout of ₹${vp.amount.toLocaleString()} dispatched successfully to vendor ${vp.vendor}! Ledgers updated.`);
+    }
+  };
 
   const handleCreateOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -353,6 +486,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               <button
                 key={link.id}
                 onClick={() => setActiveAdminSubTab(link.id as any)}
+                className="sidebar-nav-btn"
                 style={{
                   width: "100%",
                   display: "flex",
@@ -365,7 +499,6 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                   backgroundColor: isActive ? "rgba(198, 161, 91, 0.08)" : "transparent",
                   color: isActive ? "#171717" : "#5A5A5A",
                   cursor: "pointer",
-                  transition: "all 0.3s",
                   textAlign: "left"
                 }}
                 title={link.label}
@@ -804,119 +937,560 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
           )}
 
           {/* ==============================================================
-              6. DECORATION TEAM
+              6. DECORATION TEAM — Charts + Add Fields
               ============================================================== */}
           {activeAdminSubTab === "decor_team" && (
-            <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <h3 style={{ fontSize: "1.5rem", marginBottom: "12px" }}>Decoration Operations Dashboard</h3>
-              <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginBottom: "24px" }}>Track assigned stages, floral setup progress, and materials checklists.</p>
-              
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Event Name</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Required Materials</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Deadline</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Staff Assigned</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Setup Progress</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {decorTasks.map(t => (
-                      <tr key={t.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                        <td style={{ padding: "12px" }}><strong>{t.event}</strong></td>
-                        <td style={{ padding: "12px" }}>{t.materials}</td>
-                        <td style={{ padding: "12px" }}>{t.deadline}</td>
-                        <td style={{ padding: "12px" }}>{t.staff}</td>
-                        <td style={{ padding: "12px" }}>
-                          <div style={{ width: "100%", backgroundColor: "rgba(0,0,0,0.06)", height: "8px", borderRadius: "4px", overflow: "hidden" }}>
-                            <div style={{ width: `${t.progress}%`, backgroundColor: "#C6A15B", height: "8px" }} />
-                          </div>
-                          <span style={{ fontSize: "0.65rem", color: "#5A5A5A" }}>{t.progress}% completed</span>
-                        </td>
-                        <td style={{ padding: "12px" }}>
-                          <span style={{ padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", backgroundColor: "rgba(198,161,91,0.1)", color: "#C6A15B" }}>{t.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="fade-in-reveal" style={{ display: "flex", flexDirection: "column", gap: "28px", textAlign: "left" }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <span className="floral-badge" style={{ marginBottom: "8px" }}><Sparkles size={10} /> Decor Operations</span>
+                  <h2 style={{ fontSize: "1.8rem", fontFamily: "var(--font-serif)", color: "#171717" }}>Decoration Operations Dashboard</h2>
+                  <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginTop: "4px" }}>Track assigned stages, floral setup progress, and materials checklists.</p>
+                </div>
+                <button onClick={() => setShowDecorModal(true)} className="luxury-btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <Plus size={15} /> Add Decor Task
+                </button>
               </div>
+
+              {/* KPI Summary Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Total Tasks</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#171717" }}>{decorTasks.length}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #28A745" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Avg. Progress</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#28A745" }}>{decorTasks.length ? Math.round(decorTasks.reduce((s,t)=>s+t.progress,0)/decorTasks.length) : 0}%</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Total Budget</span>
+                  <strong style={{ fontSize: "1.4rem", color: "#C6A15B" }}>₹{decorTasks.reduce((s,t)=>s+t.budget,0).toLocaleString()}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #F44336" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Preparing</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#F44336" }}>{decorTasks.filter(t=>t.status==="Preparing").length}</strong>
+                </div>
+              </div>
+
+              {/* Charts + Table Row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
+                {/* Main Table */}
+                <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
+                  <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
+                    <strong style={{ fontSize: "0.9rem" }}>Task Register</strong>
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "rgba(198,161,91,0.04)", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Event</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Materials</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Deadline</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Staff</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Progress</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {decorTasks.map(t => (
+                          <tr key={t.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.05)", transition: "background 0.2s" }}
+                            onMouseEnter={e=>(e.currentTarget.style.backgroundColor="rgba(198,161,91,0.03)")}
+                            onMouseLeave={e=>(e.currentTarget.style.backgroundColor="")}>
+                            <td style={{ padding: "14px 16px" }}><strong>{t.event}</strong></td>
+                            <td style={{ padding: "14px 16px", color: "#5A5A5A", maxWidth: "180px" }}>{t.materials}</td>
+                            <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>{t.deadline}</td>
+                            <td style={{ padding: "14px 16px" }}>{t.staff}</td>
+                            <td style={{ padding: "14px 16px", minWidth: "140px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <div style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.07)", height: "7px", borderRadius: "4px", overflow: "hidden" }}>
+                                  <div style={{ width: `${t.progress}%`, background: "linear-gradient(90deg, #C6A15B, #D4AF37)", height: "7px", borderRadius: "4px", transition: "width 0.6s ease" }} />
+                                </div>
+                                <span style={{ fontSize: "0.7rem", fontWeight: "700", color: "#C6A15B", whiteSpace: "nowrap" }}>{t.progress}%</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <span style={{ padding: "4px 10px", borderRadius: "20px", fontSize: "0.65rem", fontWeight: "700",
+                                backgroundColor: t.status === "Setup Started" ? "rgba(40,167,69,0.1)" : "rgba(198,161,91,0.1)",
+                                color: t.status === "Setup Started" ? "#28A745" : "#C6A15B" }}>{t.status}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Progress Bar Chart */}
+                <div className="luxury-card" style={{ padding: "24px" }}>
+                  <strong style={{ fontSize: "0.9rem", display: "block", marginBottom: "20px" }}>Setup Progress Chart</strong>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                    {decorTasks.map(t => (
+                      <div key={t.id}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                          <span style={{ fontSize: "0.75rem", fontWeight: "600", color: "#171717" }}>{t.event}</span>
+                          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#C6A15B" }}>{t.progress}%</span>
+                        </div>
+                        <div style={{ backgroundColor: "rgba(0,0,0,0.07)", height: "10px", borderRadius: "6px", overflow: "hidden" }}>
+                          <div style={{ width: `${t.progress}%`, background: "linear-gradient(90deg, #C6A15B 0%, #D4AF37 100%)", height: "10px", borderRadius: "6px", transition: "width 1s ease" }} />
+                        </div>
+                        <span style={{ fontSize: "0.65rem", color: "#5A5A5A", marginTop: "2px", display: "block" }}>Budget: ₹{t.budget.toLocaleString()} · {t.staff}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Donut Chart: Status breakdown */}
+                  <div style={{ marginTop: "28px", borderTop: "1px solid rgba(198,161,91,0.15)", paddingTop: "20px" }}>
+                    <strong style={{ fontSize: "0.8rem", display: "block", marginBottom: "16px" }}>Status Breakdown</strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                      <svg width="80" height="80" viewBox="0 0 80 80">
+                        <circle cx="40" cy="40" r="28" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="10" />
+                        <circle cx="40" cy="40" r="28" fill="none" stroke="#28A745" strokeWidth="10"
+                          strokeDasharray={`${2*Math.PI*28*(decorTasks.filter(t=>t.status==="Setup Started").length/Math.max(decorTasks.length,1))} ${2*Math.PI*28}`}
+                          strokeDashoffset={2*Math.PI*28*0.25} transform="rotate(-90 40 40)" strokeLinecap="round" />
+                        <circle cx="40" cy="40" r="28" fill="none" stroke="#C6A15B" strokeWidth="10"
+                          strokeDasharray={`${2*Math.PI*28*(decorTasks.filter(t=>t.status==="Preparing").length/Math.max(decorTasks.length,1))} ${2*Math.PI*28}`}
+                          strokeDashoffset={2*Math.PI*28*(1-decorTasks.filter(t=>t.status==="Setup Started").length/Math.max(decorTasks.length,1))*(-1) + 2*Math.PI*28*0.25} transform="rotate(-90 40 40)" strokeLinecap="round" />
+                        <text x="40" y="44" textAnchor="middle" fontSize="12" fill="#171717" fontWeight="bold">{decorTasks.length}</text>
+                      </svg>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.7rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#28A745", display: "inline-block" }} /><span>Setup Started</span></div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#C6A15B", display: "inline-block" }} /><span>Preparing</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ADD DECOR TASK MODAL */}
+              {showDecorModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(5px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+                  <div className="luxury-card" style={{ maxWidth: "520px", width: "100%", padding: "36px", border: "2px solid #C6A15B", position: "relative" }}>
+                    <button onClick={() => setShowDecorModal(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
+                    <h3 style={{ fontSize: "1.3rem", marginBottom: "24px" }}>Add Decoration Task</h3>
+                    <form onSubmit={e => {
+                      e.preventDefault();
+                      if (!newDecorEvent || !newDecorMaterials) return;
+                      setDecorTasks([...decorTasks, {
+                        id: `DT-${String(Date.now()).slice(-4)}`,
+                        event: newDecorEvent, materials: newDecorMaterials, deadline: newDecorDeadline,
+                        budget: newDecorBudget, staff: newDecorStaff, progress: newDecorProgress, status: newDecorStatus
+                      }]);
+                      setNewDecorEvent(""); setNewDecorMaterials(""); setNewDecorDeadline(""); setNewDecorBudget(0); setNewDecorStaff(""); setNewDecorProgress(0); setNewDecorStatus("Preparing");
+                      setShowDecorModal(false);
+                    }} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Event Name *</label>
+                          <input required value={newDecorEvent} onChange={e => setNewDecorEvent(e.target.value)} placeholder="e.g. Ananya Reception" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Deadline</label>
+                          <input type="date" value={newDecorDeadline} onChange={e => setNewDecorDeadline(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      </div>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Required Materials *</label>
+                        <input required value={newDecorMaterials} onChange={e => setNewDecorMaterials(e.target.value)} placeholder="White Roses, LED Pillars..." style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Staff Assigned</label>
+                          <input value={newDecorStaff} onChange={e => setNewDecorStaff(e.target.value)} placeholder="Ramesh + 3" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Budget (₹)</label>
+                          <input type="number" value={newDecorBudget} onChange={e => setNewDecorBudget(parseInt(e.target.value)||0)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Progress % (0–100)</label>
+                          <input type="number" min={0} max={100} value={newDecorProgress} onChange={e => setNewDecorProgress(parseInt(e.target.value)||0)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Status</label>
+                          <select value={newDecorStatus} onChange={e => setNewDecorStatus(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                            <option>Preparing</option><option>Setup Started</option><option>Completed</option>
+                          </select></div>
+                      </div>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add to Decor Roster</button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ==============================================================
-              7. CATERING TEAM
+              7. CATERING TEAM — Charts + Add Fields
               ============================================================== */}
           {activeAdminSubTab === "catering_team" && (
-            <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <h3 style={{ fontSize: "1.5rem", marginBottom: "12px" }}>Catering & Kitchen Dashboard</h3>
-              <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginBottom: "24px" }}>Manage wedding menus, chefs, ingredient procurements, and readiness indexes.</p>
-              
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(198,161,91,0.2)" }}>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Event Name</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Guests</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Menu Layout</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Assigned Chef</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Preparation Stage</th>
-                      <th style={{ padding: "12px", textAlign: "left" }}>Readiness</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cateringTasks.map(c => (
-                      <tr key={c.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                        <td style={{ padding: "12px" }}><strong>{c.event}</strong></td>
-                        <td style={{ padding: "12px" }}>{c.guests} Guests</td>
-                        <td style={{ padding: "12px" }}>{c.menu}</td>
-                        <td style={{ padding: "12px" }}>{c.chef}</td>
-                        <td style={{ padding: "12px" }}>{c.stage}</td>
-                        <td style={{ padding: "12px" }}>
-                          <span style={{ padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", backgroundColor: "rgba(40,167,69,0.1)", color: "#28A745", fontWeight: "700" }}>{c.readiness}% Ready</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="fade-in-reveal" style={{ display: "flex", flexDirection: "column", gap: "28px", textAlign: "left" }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <span className="floral-badge" style={{ marginBottom: "8px" }}><Sparkles size={10} /> Kitchen Ops</span>
+                  <h2 style={{ fontSize: "1.8rem", fontFamily: "var(--font-serif)", color: "#171717" }}>Catering & Kitchen Dashboard</h2>
+                  <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginTop: "4px" }}>Manage wedding menus, chefs, ingredient procurements, and readiness indexes.</p>
+                </div>
+                <button onClick={() => setShowCateringModal(true)} className="luxury-btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <Plus size={15} /> Add Catering Entry
+                </button>
               </div>
+
+              {/* KPI Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Active Menus</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#171717" }}>{cateringTasks.length}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #28A745" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Avg. Readiness</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#28A745" }}>{cateringTasks.length ? Math.round(cateringTasks.reduce((s,c)=>s+c.readiness,0)/cateringTasks.length) : 0}%</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Total Guests</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#C6A15B" }}>{cateringTasks.reduce((s,c)=>s+c.guests,0).toLocaleString()}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #F44336" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Below 50% Ready</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#F44336" }}>{cateringTasks.filter(c=>c.readiness<50).length}</strong>
+                </div>
+              </div>
+
+              {/* Charts + Table */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "24px", alignItems: "start" }}>
+                {/* Main Table */}
+                <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
+                  <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
+                    <strong style={{ fontSize: "0.9rem" }}>Kitchen Operations Register</strong>
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "rgba(198,161,91,0.04)", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Event</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Guests</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Menu Layout</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Chef</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Stage</th>
+                          <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: "700", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Readiness</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cateringTasks.map(c => (
+                          <tr key={c.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}
+                            onMouseEnter={e=>(e.currentTarget.style.backgroundColor="rgba(198,161,91,0.03)")}
+                            onMouseLeave={e=>(e.currentTarget.style.backgroundColor="")}>
+                            <td style={{ padding: "14px 16px" }}><strong>{c.event}</strong></td>
+                            <td style={{ padding: "14px 16px" }}>{c.guests}</td>
+                            <td style={{ padding: "14px 16px", color: "#5A5A5A" }}>{c.menu}</td>
+                            <td style={{ padding: "14px 16px" }}>{c.chef}</td>
+                            <td style={{ padding: "14px 16px", color: "#5A5A5A" }}>{c.stage}</td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <div style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.07)", height: "7px", borderRadius: "4px", overflow: "hidden" }}>
+                                  <div style={{ width: `${c.readiness}%`, backgroundColor: c.readiness >= 75 ? "#28A745" : c.readiness >= 40 ? "#C6A15B" : "#F44336", height: "7px", borderRadius: "4px" }} />
+                                </div>
+                                <span style={{ fontSize: "0.7rem", fontWeight: "700", color: c.readiness >= 75 ? "#28A745" : c.readiness >= 40 ? "#C6A15B" : "#F44336", whiteSpace: "nowrap" }}>{c.readiness}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Readiness Bar Chart */}
+                <div className="luxury-card" style={{ padding: "24px" }}>
+                  <strong style={{ fontSize: "0.9rem", display: "block", marginBottom: "20px" }}>Readiness Overview</strong>
+                  {/* Vertical Bar Chart */}
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: "16px", height: "140px", padding: "0 8px", borderBottom: "2px solid rgba(0,0,0,0.08)" }}>
+                    {cateringTasks.map(c => (
+                      <div key={c.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", height: "100%", justifyContent: "flex-end" }}>
+                        <span style={{ fontSize: "0.65rem", fontWeight: "700", color: c.readiness >= 75 ? "#28A745" : c.readiness >= 40 ? "#C6A15B" : "#F44336" }}>{c.readiness}%</span>
+                        <div style={{ width: "100%", height: `${c.readiness}%`, background: c.readiness >= 75 ? "linear-gradient(180deg, #28A745, #4CAF50)" : c.readiness >= 40 ? "linear-gradient(180deg, #C6A15B, #D4AF37)" : "linear-gradient(180deg, #F44336, #ef5350)", borderRadius: "6px 6px 0 0", minHeight: "4px", transition: "height 0.8s ease" }} />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: "16px", marginTop: "8px", padding: "0 8px" }}>
+                    {cateringTasks.map(c => (
+                      <div key={c.id} style={{ flex: 1, textAlign: "center" }}>
+                        <span style={{ fontSize: "0.6rem", color: "#5A5A5A", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.event.split(" ")[0]}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Guest Load Donut */}
+                  <div style={{ marginTop: "24px", borderTop: "1px solid rgba(198,161,91,0.15)", paddingTop: "20px" }}>
+                    <strong style={{ fontSize: "0.8rem", display: "block", marginBottom: "14px" }}>Guest Load Distribution</strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <svg width="80" height="80" viewBox="0 0 80 80">
+                        <circle cx="40" cy="40" r="28" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="10" />
+                        {cateringTasks.reduce<{offset:number, els:React.ReactNode[]}>((acc, c, i) => {
+                          const total = cateringTasks.reduce((s,x)=>s+x.guests,0);
+                          const frac = c.guests / Math.max(total,1);
+                          const len = 2*Math.PI*28*frac;
+                          const colors = ["#C6A15B","#28A745","#4cc9f0","#7209b7"];
+                          const el = <circle key={c.id} cx="40" cy="40" r="28" fill="none" stroke={colors[i%colors.length]} strokeWidth="10"
+                            strokeDasharray={`${len} ${2*Math.PI*28}`}
+                            strokeDashoffset={-acc.offset + 2*Math.PI*28*0.25} transform="rotate(-90 40 40)" strokeLinecap="round" />;
+                          return { offset: acc.offset + len, els: [...acc.els, el] };
+                        }, {offset:0, els:[]}).els}
+                        <text x="40" y="43" textAnchor="middle" fontSize="9" fill="#5A5A5A">Guests</text>
+                      </svg>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {cateringTasks.map((c,i) => {
+                          const colors = ["#C6A15B","#28A745","#4cc9f0","#7209b7"];
+                          return (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.68rem" }}>
+                            <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: colors[i%colors.length], display: "inline-block", flexShrink: 0 }} />
+                            <span style={{ color: "#5A5A5A" }}>{c.event.split(" ")[0]} ({c.guests})</span>
+                          </div>);
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ADD CATERING MODAL */}
+              {showCateringModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(5px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+                  <div className="luxury-card" style={{ maxWidth: "520px", width: "100%", padding: "36px", border: "2px solid #C6A15B", position: "relative" }}>
+                    <button onClick={() => setShowCateringModal(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
+                    <h3 style={{ fontSize: "1.3rem", marginBottom: "24px" }}>Add Catering Entry</h3>
+                    <form onSubmit={e => {
+                      e.preventDefault();
+                      if (!newCateringEvent || !newCateringMenu) return;
+                      setCateringTasks([...cateringTasks, {
+                        id: `CT-${String(Date.now()).slice(-4)}`,
+                        event: newCateringEvent, guests: newCateringGuests, menu: newCateringMenu,
+                        chef: newCateringChef, stage: newCateringStage, readiness: newCateringReadiness
+                      }]);
+                      setNewCateringEvent(""); setNewCateringGuests(100); setNewCateringMenu(""); setNewCateringChef(""); setNewCateringStage("Menu Finalized"); setNewCateringReadiness(0);
+                      setShowCateringModal(false);
+                    }} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Event Name *</label>
+                          <input required value={newCateringEvent} onChange={e => setNewCateringEvent(e.target.value)} placeholder="e.g. Sharma Wedding" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Guest Count</label>
+                          <input type="number" value={newCateringGuests} onChange={e => setNewCateringGuests(parseInt(e.target.value)||0)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      </div>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Menu Layout *</label>
+                        <input required value={newCateringMenu} onChange={e => setNewCateringMenu(e.target.value)} placeholder="Royal Buffet + Live Counters" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Assigned Chef</label>
+                          <input value={newCateringChef} onChange={e => setNewCateringChef(e.target.value)} placeholder="Chef Rajan" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Preparation Stage</label>
+                          <select value={newCateringStage} onChange={e => setNewCateringStage(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                            <option>Menu Finalized</option><option>Ingredients Procurement</option><option>Pre-Cooking</option><option>Ready</option>
+                          </select></div>
+                      </div>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Readiness % (0–100)</label>
+                        <input type="number" min={0} max={100} value={newCateringReadiness} onChange={e => setNewCateringReadiness(parseInt(e.target.value)||0)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add to Kitchen Roster</button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ==============================================================
-              8. PHOTOGRAPHY TEAM
+              8. PHOTOGRAPHY TEAM — Charts + Add Fields
               ============================================================== */}
           {activeAdminSubTab === "photo_team" && (
-            <div className="luxury-card fade-in-reveal" style={{ textAlign: "left" }}>
-              <h3 style={{ fontSize: "1.5rem", marginBottom: "12px" }}>Photography & Cinematic Team</h3>
-              <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginBottom: "24px" }}>Drone permissions, sunset photoshoot alignments, and videography brief checks.</p>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-                <div className="luxury-card" style={{ border: "1px solid rgba(198,161,91,0.2)" }}>
-                  <h4 style={{ fontSize: "1.1rem", marginBottom: "12px" }}>Assigned Shoots Schedule</h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "0.8rem" }}>
-                    <div>
-                      <strong>Rahul Wedding Shoot</strong>
-                      <span style={{ display: "block", color: "#5A5A5A" }}>24 June 2026 | Drone cinematic layout + 2 Candid Photographers</span>
-                    </div>
-                    <div>
-                      <strong>TechCorp Executive Group Shoot</strong>
-                      <span style={{ display: "block", color: "#5A5A5A" }}>20 June 2026 | Stage projection group layout</span>
-                    </div>
+            <div className="fade-in-reveal" style={{ display: "flex", flexDirection: "column", gap: "28px", textAlign: "left" }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <span className="floral-badge" style={{ marginBottom: "8px" }}><Sparkles size={10} /> Cinematic Ops</span>
+                  <h2 style={{ fontSize: "1.8rem", fontFamily: "var(--font-serif)", color: "#171717" }}>Photography & Cinematic Team</h2>
+                  <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginTop: "4px" }}>Drone permissions, sunset photoshoot alignments, and videography brief checks.</p>
+                </div>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button onClick={() => setShowPhotoShootModal(true)} className="luxury-btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <Plus size={15} /> Add Shoot
+                  </button>
+                  <button onClick={() => setShowPhotoTrailModal(true)} className="luxury-btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <Plus size={15} /> Add Trail
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Scheduled Shoots</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#171717" }}>{photoShoots.length}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #28A745" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Trails Ready</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#28A745" }}>{photoTrails.filter(t=>t.status==="Ready").length}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Wedding Shoots</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#C6A15B" }}>{photoShoots.filter(s=>s.type==="Wedding").length}</strong>
+                </div>
+                <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #F44336" }}>
+                  <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>In Progress</span>
+                  <strong style={{ fontSize: "1.8rem", color: "#F44336" }}>{photoTrails.filter(t=>t.status.includes("Progress")).length}</strong>
+                </div>
+              </div>
+
+              {/* Two Column Layout */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
+                {/* Shoots Schedule */}
+                <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
+                  <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <strong style={{ fontSize: "0.9rem" }}>Assigned Shoots Schedule</strong>
+                    <span style={{ fontSize: "0.65rem", color: "#5A5A5A", backgroundColor: "rgba(198,161,91,0.08)", padding: "4px 10px", borderRadius: "12px" }}>{photoShoots.length} shoots</span>
+                  </div>
+                  <div style={{ padding: "8px 0" }}>
+                    {photoShoots.map((s, i) => (
+                      <div key={s.id} style={{ padding: "16px 24px", borderBottom: i < photoShoots.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none",
+                        display: "flex", gap: "14px", alignItems: "flex-start" }}
+                        onMouseEnter={e=>(e.currentTarget.style.backgroundColor="rgba(198,161,91,0.03)")}
+                        onMouseLeave={e=>(e.currentTarget.style.backgroundColor="")}>
+                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: s.type==="Wedding" ? "rgba(198,161,91,0.12)" : "rgba(40,167,69,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Camera size={16} color={s.type==="Wedding" ? "#C6A15B" : "#28A745"} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ fontSize: "0.85rem", display: "block" }}>{s.title}</strong>
+                          <span style={{ fontSize: "0.75rem", color: "#5A5A5A", display: "block", marginTop: "2px" }}>{s.date} | {s.details}</span>
+                          <span style={{ display: "inline-block", marginTop: "6px", padding: "2px 8px", borderRadius: "12px", fontSize: "0.6rem", fontWeight: "700",
+                            backgroundColor: s.type==="Wedding" ? "rgba(198,161,91,0.1)" : "rgba(40,167,69,0.1)",
+                            color: s.type==="Wedding" ? "#C6A15B" : "#28A745" }}>{s.type}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="luxury-card" style={{ border: "1px solid rgba(198,161,91,0.2)" }}>
-                  <h4 style={{ fontSize: "1.1rem", marginBottom: "12px" }}>Photoshoot Trails Status</h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.8rem" }}>
-                    <span>Sunset Pavilion Trail: <strong style={{ color: "#28A745" }}>Ready</strong></span>
-                    <span>Cascading Floral Swing: <strong style={{ color: "#28A745" }}>Ready</strong></span>
-                    <span>Lantern Walkway Spots: <strong style={{ color: "#C6A15B" }}>Setup In Progress</strong></span>
+
+                {/* Trails + Chart */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
+                    <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <strong style={{ fontSize: "0.9rem" }}>Photoshoot Trails Status</strong>
+                      <span style={{ fontSize: "0.65rem", color: "#5A5A5A", backgroundColor: "rgba(198,161,91,0.08)", padding: "4px 10px", borderRadius: "12px" }}>{photoTrails.length} trails</span>
+                    </div>
+                    <div style={{ padding: "8px 0" }}>
+                      {photoTrails.map((t, i) => (
+                        <div key={t.id} style={{ padding: "14px 24px", borderBottom: i < photoTrails.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none",
+                          display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                          onMouseEnter={e=>(e.currentTarget.style.backgroundColor="rgba(198,161,91,0.03)")}
+                          onMouseLeave={e=>(e.currentTarget.style.backgroundColor="")}>
+                          <span style={{ fontSize: "0.82rem", color: "#171717" }}>{t.name}</span>
+                          <span style={{ padding: "4px 10px", borderRadius: "20px", fontSize: "0.65rem", fontWeight: "700",
+                            backgroundColor: t.status==="Ready" ? "rgba(40,167,69,0.1)" : "rgba(198,161,91,0.1)",
+                            color: t.status==="Ready" ? "#28A745" : "#C6A15B" }}>{t.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Trail Status Donut Chart */}
+                  <div className="luxury-card" style={{ padding: "24px" }}>
+                    <strong style={{ fontSize: "0.9rem", display: "block", marginBottom: "16px" }}>Trail Readiness Chart</strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                      <svg width="90" height="90" viewBox="0 0 90 90">
+                        <circle cx="45" cy="45" r="32" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="12" />
+                        {(() => {
+                          const ready = photoTrails.filter(t=>t.status==="Ready").length;
+                          const total = photoTrails.length || 1;
+                          const readyFrac = ready / total;
+                          const pendingFrac = 1 - readyFrac;
+                          const circ = 2 * Math.PI * 32;
+                          return (<>
+                            <circle cx="45" cy="45" r="32" fill="none" stroke="#28A745" strokeWidth="12"
+                              strokeDasharray={`${circ*readyFrac} ${circ}`}
+                              strokeDashoffset={circ*0.25} transform="rotate(-90 45 45)" strokeLinecap="round" />
+                            <circle cx="45" cy="45" r="32" fill="none" stroke="#C6A15B" strokeWidth="12"
+                              strokeDasharray={`${circ*pendingFrac} ${circ}`}
+                              strokeDashoffset={-(circ*readyFrac) + circ*0.25} transform="rotate(-90 45 45)" strokeLinecap="round" />
+                            <text x="45" y="49" textAnchor="middle" fontSize="13" fill="#171717" fontWeight="bold">{Math.round(readyFrac*100)}%</text>
+                          </>);
+                        })()}
+                      </svg>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem" }}>
+                          <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#28A745", display: "inline-block" }} />
+                          <span>Ready ({photoTrails.filter(t=>t.status==="Ready").length})</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem" }}>
+                          <span style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#C6A15B", display: "inline-block" }} />
+                          <span>In Progress ({photoTrails.filter(t=>t.status!=="Ready").length})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Shoot Type Bar Chart */}
+                    <div style={{ marginTop: "20px", borderTop: "1px solid rgba(198,161,91,0.15)", paddingTop: "16px" }}>
+                      <strong style={{ fontSize: "0.8rem", display: "block", marginBottom: "12px" }}>Shoot Types</strong>
+                      {["Wedding", "Corporate", "Engagement", "Birthday"].map(type => {
+                        const count = photoShoots.filter(s=>s.type===type).length;
+                        const max = Math.max(...["Wedding", "Corporate", "Engagement", "Birthday"].map(t => photoShoots.filter(s=>s.type===t).length), 1);
+                        return count > 0 ? (
+                          <div key={type} style={{ marginBottom: "10px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                              <span style={{ fontSize: "0.7rem", color: "#5A5A5A" }}>{type}</span>
+                              <span style={{ fontSize: "0.7rem", fontWeight: "700", color: "#C6A15B" }}>{count}</span>
+                            </div>
+                            <div style={{ backgroundColor: "rgba(0,0,0,0.07)", height: "6px", borderRadius: "3px", overflow: "hidden" }}>
+                              <div style={{ width: `${(count/max)*100}%`, background: "linear-gradient(90deg, #C6A15B, #D4AF37)", height: "6px", borderRadius: "3px" }} />
+                            </div>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* ADD SHOOT MODAL */}
+              {showPhotoShootModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(5px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+                  <div className="luxury-card" style={{ maxWidth: "480px", width: "100%", padding: "36px", border: "2px solid #C6A15B", position: "relative" }}>
+                    <button onClick={() => setShowPhotoShootModal(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
+                    <h3 style={{ fontSize: "1.3rem", marginBottom: "24px" }}>Add Photo Shoot</h3>
+                    <form onSubmit={e => {
+                      e.preventDefault();
+                      if (!newPhotoTitle) return;
+                      setPhotoShoots([...photoShoots, { id: `PS-${String(Date.now()).slice(-4)}`, title: newPhotoTitle, date: newPhotoDate, details: newPhotoDetails, type: newPhotoType }]);
+                      setNewPhotoTitle(""); setNewPhotoDate(""); setNewPhotoDetails(""); setNewPhotoType("Wedding");
+                      setShowPhotoShootModal(false);
+                    }} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Shoot Title *</label>
+                        <input required value={newPhotoTitle} onChange={e => setNewPhotoTitle(e.target.value)} placeholder="e.g. Nair Wedding Shoot" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Date</label>
+                          <input type="date" value={newPhotoDate} onChange={e => setNewPhotoDate(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                        <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Type</label>
+                          <select value={newPhotoType} onChange={e => setNewPhotoType(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                            <option>Wedding</option><option>Corporate</option><option>Engagement</option><option>Birthday</option><option>Family</option>
+                          </select></div>
+                      </div>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Details / Layout</label>
+                        <input value={newPhotoDetails} onChange={e => setNewPhotoDetails(e.target.value)} placeholder="Drone + 2 Candid Photographers" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add Shoot to Schedule</button>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* ADD TRAIL MODAL */}
+              {showPhotoTrailModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(5px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+                  <div className="luxury-card" style={{ maxWidth: "420px", width: "100%", padding: "36px", border: "2px solid #C6A15B", position: "relative" }}>
+                    <button onClick={() => setShowPhotoTrailModal(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer" }}><X size={20} /></button>
+                    <h3 style={{ fontSize: "1.3rem", marginBottom: "24px" }}>Add Photoshoot Trail</h3>
+                    <form onSubmit={e => {
+                      e.preventDefault();
+                      if (!newTrailName) return;
+                      setPhotoTrails([...photoTrails, { id: `PT-${String(Date.now()).slice(-4)}`, name: newTrailName, status: newTrailStatus }]);
+                      setNewTrailName(""); setNewTrailStatus("Ready");
+                      setShowPhotoTrailModal(false);
+                    }} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Trail Name *</label>
+                        <input required value={newTrailName} onChange={e => setNewTrailName(e.target.value)} placeholder="e.g. Garden Arch Spot" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
+                      <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Status</label>
+                        <select value={newTrailStatus} onChange={e => setNewTrailStatus(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                          <option>Ready</option><option>Setup In Progress</option><option>Maintenance</option>
+                        </select></div>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add Trail</button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

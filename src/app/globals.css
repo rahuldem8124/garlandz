@@ -140,14 +140,14 @@ a {
   border: 1px solid var(--border-strict);
   border-radius: 24px;
   padding: 30px;
-  box-shadow: var(--shadow-premium);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.05);
+  transition: all 450ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .luxury-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-elevated);
-  border-color: rgba(198, 161, 91, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  border-color: rgba(198, 161, 91, 0.25);
 }
 
 /* Premium Buttons */
@@ -163,7 +163,7 @@ a {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 450ms cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -174,7 +174,7 @@ a {
   border-color: #1f1f1f;
   color: #FFFFFF;
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.12), 0 0 0 4px rgba(198, 161, 91, 0.08);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08), 0 0 0 4px rgba(198, 161, 91, 0.04);
 }
 
 .luxury-btn-secondary {
@@ -189,16 +189,17 @@ a {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 450ms cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
 .luxury-btn-secondary:hover {
-  background-color: rgba(198, 161, 91, 0.12);
+  background-color: rgba(198, 161, 91, 0.08);
   color: #171717;
   transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
 }
 
 /* Badges */
@@ -223,37 +224,337 @@ a {
   width: 100%;
 }
 
-/* Animations */
+/* ==========================================
+   CINEMATIC & LUXURY MOTION KEYFRAMES
+   ========================================== */
+
+/* Page & Section Fade */
 @keyframes slowFadeReveal {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 .fade-in-reveal {
-  animation: slowFadeReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slowFadeReveal 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Gold drifting particles */
-.gold-particles-container {
+/* Cinematic Background Crossfade */
+@keyframes cinematicFadeIn {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.hero-background-fade {
+  animation: cinematicFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Layered Blur Text Reveal */
+@keyframes textBlurReveal {
+  0% {
+    filter: blur(8px);
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.cinematic-text-reveal {
+  animation: textBlurReveal 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Calm Step Transitions */
+@keyframes wizardCrossfade {
+  0% {
+    opacity: 0;
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.wizard-step-container {
+  animation: wizardCrossfade 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Sidebar Nav Button */
+.sidebar-nav-btn {
+  transition: all 450ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.sidebar-nav-btn:hover {
+  transform: translate3d(6px, 0, 0) !important;
+  opacity: 0.95 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Luxury Skeleton Loader */
+.luxury-skeleton {
+  background-color: var(--bg-soft-beige);
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  min-height: 20px;
+}
+
+.luxury-skeleton::after {
+  content: "";
   position: absolute;
   top: 0;
+  right: 0;
+  bottom: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(198, 161, 91, 0.15) 60%,
+    transparent 100%
+  );
+  transform: translate3d(-100%, 0, 0);
+  animation: luxuryShimmer 2.5s infinite ease-in-out;
 }
 
-.gold-particle {
+.luxury-skeleton-accent {
+  height: 2px;
+  background-color: var(--accent-gold-bright);
+  width: 40px;
+  margin-top: 8px;
+  animation: blurReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes luxuryShimmer {
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes blurReveal {
+  0% {
+    filter: blur(8px);
+    opacity: 0;
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+/* ==========================================
+   IMMERSIVE SUBTLE EXPERIENTIAL PARTICLES
+   ========================================== */
+
+/* Wedding: Floating rose petals */
+@keyframes fallingPetal {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.35; }
+  90% { opacity: 0.35; }
+  100% { transform: translate3d(120px, 110vh, 0) rotate(270deg); opacity: 0; }
+}
+.petal-particle {
   position: absolute;
-  background: radial-gradient(circle, var(--accent-gold-bright) 0%, transparent 70%);
-  border-radius: 50%;
-  opacity: 0.3;
-  animation: drift 15s infinite linear;
+  pointer-events: none;
+  background: linear-gradient(135deg, #ffccd5 0%, #ff85a1 100%);
+  border-radius: 50% 0 50% 50%;
+  opacity: 0;
+  animation: fallingPetal 15s infinite linear;
 }
 
-@keyframes drift {
-  0% { transform: translateY(105vh) translateX(0) rotate(0deg); }
-  100% { transform: translateY(-10vh) translateX(100px) rotate(360deg); }
+/* Birthday: Confetti falling */
+@keyframes fallingConfetti {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0.8; }
+  100% { transform: translate3d(80px, 110vh, 0) rotate(540deg); opacity: 0; }
 }
+.confetti-particle {
+  position: absolute;
+  pointer-events: none;
+  animation: fallingConfetti 8s infinite linear;
+}
+
+/* Corporate: Clean minimalist moving gold lines */
+@keyframes movingGoldLine {
+  0% { transform: translate3d(-100%, 0, 0); opacity: 0; }
+  20% { opacity: 0.15; }
+  80% { opacity: 0.15; }
+  100% { transform: translate3d(100vw, 0, 0); opacity: 0; }
+}
+.line-particle {
+  position: absolute;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent-gold-metallic) 50%, transparent);
+  height: 1px;
+  width: 250px;
+  animation: movingGoldLine 25s infinite linear;
+}
+
+/* Engagement: Twinkling sparkles */
+@keyframes starTwinkle {
+  0%, 100% { transform: scale(0.3); opacity: 0.05; }
+  50% { transform: scale(0.9); opacity: 0.45; }
+}
+.sparkle-particle {
+  position: absolute;
+  pointer-events: none;
+  background-color: var(--accent-gold-bright);
+  clip-path: polygon(50% 0%, 62% 38%, 100% 38%, 69% 59%, 81% 100%, 50% 75%, 19% 100%, 31% 59%, 0% 38%, 38% 38%);
+  box-shadow: 0 0 10px rgba(198, 161, 91, 0.4);
+  animation: starTwinkle 6s infinite ease-in-out;
+}
+
+/* Photoshoot: Drifting bokeh spots */
+@keyframes photoshootBokeh {
+  0% { transform: translate3d(0, 105vh, 0) scale(0.6); opacity: 0; }
+  25% { opacity: 0.18; }
+  85% { opacity: 0.18; }
+  100% { transform: translate3d(60px, -5vh, 0) scale(1.2); opacity: 0; }
+}
+.bokeh-particle {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(198, 161, 91, 0.25) 0%, transparent 60%);
+  border-radius: 50%;
+  animation: photoshootBokeh 18s infinite linear;
+}
+
+/* Family Function: Floating paper lanterns */
+@keyframes floatingLantern {
+  0% { transform: translate3d(0, 105vh, 0) scale(0.8) rotate(-5deg); opacity: 0; }
+  15% { opacity: 0.35; }
+  85% { opacity: 0.35; }
+  100% { transform: translate3d(-80px, -5vh, 0) scale(1.1) rotate(5deg); opacity: 0; }
+}
+.lantern-particle {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 183, 77, 0.8) 0%, rgba(224, 86, 36, 0.2) 75%);
+  border-radius: 6px 6px 12px 12px;
+  box-shadow: 0 0 15px rgba(255, 143, 0, 0.4);
+  animation: floatingLantern 22s infinite ease-in-out;
+}
+
+/* Mobile Performance Guardrails (Disable heavy animations completely below 768px) */
+@media (max-width: 768px) {
+  .petal-particle,
+  .confetti-particle,
+  .line-particle,
+  .sparkle-particle,
+  .bokeh-particle,
+  .lantern-particle {
+    display: none !important;
+  }
+}
+
+/* Auto-Scrolling Premium Proof Strip */
+@keyframes scrollStatsTrack {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+.proof-strip-scroller {
+  display: flex;
+  width: max-content;
+  animation: scrollStatsTrack 30s infinite linear;
+}
+.proof-strip-scroller:hover {
+  animation-play-state: paused;
+}
+
+/* Gold border glow overlay */
+.gold-accent-glow {
+  box-shadow: 0 0 25px rgba(198, 161, 91, 0.35);
+  border-color: var(--accent-gold-bright) !important;
+}
+
+/* Responsive Helper Utilities */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Hero Premium Pill Buttons */
+.hero-btn-primary {
+  background-color: var(--accent-gold-metallic);
+  color: #171717;
+  border: 1.5px solid var(--accent-gold-metallic);
+  border-radius: 40px;
+  padding: 14px 32px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-btn-primary:hover {
+  background-color: transparent;
+  color: #FFFFFF;
+  border-color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+}
+
+.hero-btn-secondary {
+  background-color: transparent;
+  color: #FFFFFF;
+  border: 1.5px solid #FFFFFF;
+  border-radius: 40px;
+  padding: 14px 32px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-btn-secondary:hover {
+  background-color: #FFFFFF;
+  color: #171717;
+  border-color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+}
+

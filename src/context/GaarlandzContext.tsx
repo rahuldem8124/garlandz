@@ -179,6 +179,8 @@ interface GaarlandzContextType {
   addSiteVisit: (visitData: Omit<SiteVisit, "id" | "status">) => void;
   updateSiteVisitStatus: (id: string, newStatus: SiteVisit["status"]) => void;
   updateSpacePricing: (spaceId: string, newBasePrice: number, newCapacity: number) => void;
+  addSpace: (space: Omit<VenueSpace, "id">) => void;
+  updateSpaceDetails: (spaceId: string, updatedFields: Partial<VenueSpace>) => void;
   
   addVendor: (vendor: Omit<Vendor, "id">) => void;
   updateVendorStatus: (id: string, status: Vendor["status"]) => void;
@@ -196,7 +198,7 @@ interface GaarlandzContextType {
   generateInvoice: (bookingId: string) => void;
   
   // Calculators
-  calculateDynamicPrice: (spaceId: string, dateStr: string, guestCount: number, sessionTime: Booking["sessionTime"], selectedServiceIds: string[]) => Booking["pricing"];
+  calculateDynamicPrice: (spaceId: string, dateStr: string, guestCount: number, sessionTime: Booking["sessionTime"], selectedServiceIds: string[], themeBasePrice?: number) => Booking["pricing"];
   checkDateAvailability: (spaceId: string, dateStr: string) => { isAvailable: boolean; bookedEventName?: string };
   getAlternativeDates: (spaceId: string, dateStr: string) => string[];
   isPremiumDate: (dateStr: string) => boolean;
@@ -688,15 +690,30 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // DYNAMIC PRICING ENGINE
   // ==========================================
 
+  const getThemeBasePrice = (eventType: string): number => {
+    const key = eventType.toLowerCase().replace(" function", "");
+    const prices: Record<string, number> = {
+      wedding: 150000,
+      birthday: 65000,
+      corporate: 90000,
+      engagement: 75000,
+      photoshoot: 40000,
+      family: 70000,
+      custom: 100000
+    };
+    return prices[key] || 150000;
+  };
+
   const calculateDynamicPrice = (
     spaceId: string,
     dateStr: string,
     guestCount: number,
     sessionTime: Booking["sessionTime"],
-    selectedServiceIds: string[]
+    selectedServiceIds: string[],
+    themeBasePrice?: number
   ): Booking["pricing"] => {
     const space = spaces.find((s) => s.id === spaceId) || INITIAL_SPACES[0];
-    const base = space.basePrice;
+    const base = themeBasePrice !== undefined ? themeBasePrice : space.basePrice;
 
     // 1. Session Surcharges
     let sessionSurcharge = 0;
@@ -796,7 +813,8 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       bookingData.date,
       bookingData.guestCount,
       bookingData.sessionTime,
-      bookingData.services
+      bookingData.services,
+      getThemeBasePrice(bookingData.eventType)
     );
 
     const generatedId = `GAAR${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1085,7 +1103,8 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       lead.preferredDate,
       lead.guestCount,
       lead.preferredSession || "Morning",
-      []
+      [],
+      getThemeBasePrice(lead.eventType)
     );
 
     pricing.advancePaid = advancePaid;
@@ -1235,6 +1254,48 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const updateSpacePricing = (spaceId: string, newBasePrice: number, newCapacity: number) => {
     const updatedSpaces = spaces.map((s) =>
       s.id === spaceId ? { ...s, basePrice: newBasePrice, capacity: newCapacity } : s
+    );
+    setSpaces(updatedSpaces);
+    syncToLocalStorage(
+      updatedSpaces,
+      bookings,
+      leads,
+      siteVisits,
+      operations,
+      staff,
+      vendors,
+      documents,
+      budgets,
+      notifications,
+      automationLogs
+    );
+  };
+
+  const addSpace = (spaceData: Omit<VenueSpace, "id">) => {
+    const newSpace: VenueSpace = {
+      ...spaceData,
+      id: `sp-${spaceData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || Math.floor(Math.random() * 1000)}`
+    };
+    const updatedSpaces = [...spaces, newSpace];
+    setSpaces(updatedSpaces);
+    syncToLocalStorage(
+      updatedSpaces,
+      bookings,
+      leads,
+      siteVisits,
+      operations,
+      staff,
+      vendors,
+      documents,
+      budgets,
+      notifications,
+      automationLogs
+    );
+  };
+
+  const updateSpaceDetails = (spaceId: string, updatedFields: Partial<VenueSpace>) => {
+    const updatedSpaces = spaces.map((s) =>
+      s.id === spaceId ? { ...s, ...updatedFields } : s
     );
     setSpaces(updatedSpaces);
     syncToLocalStorage(
@@ -1543,6 +1604,8 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addSiteVisit,
         updateSiteVisitStatus,
         updateSpacePricing,
+        addSpace,
+        updateSpaceDetails,
         addVendor,
         updateVendorStatus,
         addStaff,
