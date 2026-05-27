@@ -1,0 +1,259 @@
+/* ==========================================
+   GAARLANDZ LUXURY VENUE DESIGN SYSTEM
+   Cream, Gold & Garden Green Style
+   ========================================== */
+
+:root {
+  /* Colors */
+  --bg-cream: #FAF9F5;
+  --bg-soft-beige: #F8F5EE;
+  --bg-white: #FFFFFF;
+
+  /* Strict Brand Colors */
+  --bg-white-strict: #FFFFFF;
+  --bg-soft-strict: #FAF9F5;
+  --bg-section-strict: #F8F5EE;
+  --text-primary-strict: #171717;
+  --text-secondary-strict: #2A2A2A;
+  --gold-primary-strict: #C6A15B;
+  --gold-hover-strict: #D4AF37;
+  --gold-tint-strict: rgba(198, 161, 91, 0.08);
+  --border-strict: rgba(0, 0, 0, 0.06);
+  --gold-divider-strict: rgba(198, 161, 91, 0.35);
+
+  /* Deep Tones mapped to brand colors to eliminate green */
+  --primary-green-dark: #171717;
+  --primary-green-emerald: #2A2A2A;
+  --primary-green-light: rgba(198, 161, 91, 0.08);
+
+  /* Gold Accent & Premium Metallic Tones */
+  --accent-gold-metallic: #C6A15B;
+  --accent-gold-bright: #C6A15B;
+  --accent-gold-hover: #D4AF37;
+  --accent-gold-light: rgba(198, 161, 91, 0.08);
+
+  /* Theme Compatibility Aliases */
+  --accent-yellow-metallic: var(--accent-gold-metallic);
+  --accent-yellow-gold: var(--accent-gold-bright);
+  --accent-yellow-hover: var(--accent-gold-hover);
+  --accent-yellow-light: var(--accent-gold-light);
+  --primary-black-dark: #171717;
+  --primary-black-charcoal: #2A2A2A;
+  --primary-black-light: rgba(198, 161, 91, 0.08);
+  --primary-black-highlight: rgba(198, 161, 91, 0.08);
+
+  /* Neutral Texts */
+  --text-dark: #171717;
+  --text-muted: #5A5A5A;
+  --text-light: #FFFFFF;
+
+  /* Calendar & Status Tags - Confirmed: soft gold, Completed: charcoal, Pending: light amber, Cancelled: soft red, Success: small green only */
+  --status-inquiry: #C6A15B;   /* Gold Accent */
+  --status-confirmed: #C6A15B; /* Soft Gold */
+  --status-prep: #FFC107;      /* Light Amber */
+  --status-completed: #171717; /* Charcoal */
+  --status-blocked: #F44336;   /* Soft Red */
+
+  /* Shadows */
+  --shadow-premium: 0 10px 35px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 14px 40px rgba(0, 0, 0, 0.07);
+  --shadow-gold: 0 4px 20px rgba(198, 161, 91, 0.15);
+
+  /* Fonts */
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-sans: var(--font-outfit), "Outfit", "Inter", sans-serif;
+}
+
+/* Reset and Core Layout */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-cream);
+  color: var(--text-dark);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--bg-cream);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+/* Elegant Headers & Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  color: var(--primary-green-dark);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-cream);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-green-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold-metallic);
+}
+
+/* ==========================================
+   GLASSMORPHISM & PREMIUM UTILITIES
+   ========================================== */
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+.luxury-card {
+  background: var(--bg-white-strict);
+  border: 1px solid var(--border-strict);
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: var(--shadow-premium);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-elevated);
+  border-color: rgba(198, 161, 91, 0.3);
+}
+
+/* Premium Buttons */
+.luxury-btn {
+  background-color: #171717;
+  color: #FFFFFF;
+  border: 1px solid #171717;
+  padding: 12px 28px;
+  border-radius: 16px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.luxury-btn:hover {
+  background-color: #1f1f1f;
+  border-color: #1f1f1f;
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12), 0 0 0 4px rgba(198, 161, 91, 0.08);
+}
+
+.luxury-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.75);
+  color: #171717;
+  border: 1px solid rgba(198, 161, 91, 0.35);
+  padding: 12px 28px;
+  border-radius: 16px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.luxury-btn-secondary:hover {
+  background-color: rgba(198, 161, 91, 0.12);
+  color: #171717;
+  transform: translateY(-2px);
+}
+
+/* Badges */
+.floral-badge {
+  background-color: var(--bg-soft-beige);
+  color: var(--accent-gold-metallic);
+  border: 1px solid rgba(197, 160, 89, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.155em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-gold-metallic), transparent);
+  width: 100%;
+}
+
+/* Animations */
+@keyframes slowFadeReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-reveal {
+  animation: slowFadeReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Gold drifting particles */
+.gold-particles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gold-particle {
+  position: absolute;
+  background: radial-gradient(circle, var(--accent-gold-bright) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: drift 15s infinite linear;
+}
+
+@keyframes drift {
+  0% { transform: translateY(105vh) translateX(0) rotate(0deg); }
+  100% { transform: translateY(-10vh) translateX(100px) rotate(360deg); }
+}
