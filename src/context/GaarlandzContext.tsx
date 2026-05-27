@@ -247,7 +247,7 @@ const INITIAL_SPACES: VenueSpace[] = [
     capacity: 150,
     basePrice: 30000,
     description: "An exquisite outdoor recreation playground complete with security supervisors, dynamic slides, and luxury custom kids catering counters.",
-    image: "https://images.unsplash.com/photo-1571844307560-f55a55956a30?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?auto=format&fit=crop&q=80&w=1200",
     category: "Kids Zone"
   },
   {

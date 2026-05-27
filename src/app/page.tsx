@@ -608,7 +608,7 @@ function CelebrationGateway() {
                 { title: "Open Wedding Venue", cap: "100–1000 Guests", price: "₹1,50,000", avail: "Available", img: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=600" },
                 { title: "Corporate Meeting Hall", cap: "50–300 Guests", price: "₹80,000", avail: "Available", img: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&q=80&w=600" },
                 { title: "Food Court / Mini Hall", cap: "100–400 Guests", price: "₹70,000", avail: "Available", img: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=600" },
-                { title: "Kids Play Area", cap: "Up to 150 Kids", price: "₹30,000", avail: "Available", img: "https://images.unsplash.com/photo-1571844307560-f55a55956a30?auto=format&fit=crop&q=80&w=600" },
+                { title: "Kids Play Area", cap: "Up to 150 Kids", price: "₹30,000", avail: "Available", img: "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?auto=format&fit=crop&q=80&w=600" },
                 { title: "Photo Shoot Spots", cap: "Photography Crews", price: "₹40,000", avail: "Available", img: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600" },
                 { title: "Luxury Bride/Groom Suites", cap: "Royal Accommodations", price: "₹25,000", avail: "Available", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=600" }
               ].map((card, idx) => (
