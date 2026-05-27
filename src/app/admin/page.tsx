@@ -965,7 +965,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                 </div>
                 <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #C6A15B" }}>
                   <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Total Budget</span>
-                  <strong style={{ fontSize: "1.4rem", color: "#C6A15B" }}>₹{decorTasks.reduce((s,t)=>s+t.budget,0).toLocaleString()}</strong>
+                  <strong style={{ fontSize: "1.8rem", color: "#C6A15B" }}>₹{decorTasks.reduce((s,t)=>s+t.budget,0).toLocaleString()}</strong>
                 </div>
                 <div className="luxury-card" style={{ padding: "20px", borderLeft: "4px solid #F44336" }}>
                   <span style={{ fontSize: "0.6rem", color: "#5A5A5A", textTransform: "uppercase", display: "block" }}>Preparing</span>
@@ -974,7 +974,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               </div>
 
               {/* Charts + Table Row */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(260px, 320px)", gap: "24px", alignItems: "start" }}>
                 {/* Main Table */}
                 <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
                   <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
@@ -1101,7 +1101,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                             <option>Preparing</option><option>Setup Started</option><option>Completed</option>
                           </select></div>
                       </div>
-                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add to Decor Roster</button>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginTop: "4px" }}>Add to Decor Roster</button>
                     </form>
                   </div>
                 </div>
@@ -1147,7 +1147,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               </div>
 
               {/* Charts + Table */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "24px", alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(240px, 300px)", gap: "24px", alignItems: "start" }}>
                 {/* Main Table */}
                 <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
                   <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
@@ -1277,7 +1277,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                       </div>
                       <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Readiness % (0–100)</label>
                         <input type="number" min={0} max={100} value={newCateringReadiness} onChange={e => setNewCateringReadiness(parseInt(e.target.value)||0)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
-                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add to Kitchen Roster</button>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginTop: "4px" }}>Add to Kitchen Roster</button>
                     </form>
                   </div>
                 </div>
@@ -1328,7 +1328,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
               </div>
 
               {/* Two Column Layout */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "24px", alignItems: "start" }}>
                 {/* Shoots Schedule */}
                 <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
                   <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(198,161,91,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1461,7 +1461,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                       </div>
                       <div><label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Details / Layout</label>
                         <input value={newPhotoDetails} onChange={e => setNewPhotoDetails(e.target.value)} placeholder="Drone + 2 Candid Photographers" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} /></div>
-                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add Shoot to Schedule</button>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginTop: "4px" }}>Add Shoot to Schedule</button>
                     </form>
                   </div>
                 </div>
@@ -1486,7 +1486,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                         <select value={newTrailStatus} onChange={e => setNewTrailStatus(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
                           <option>Ready</option><option>Setup In Progress</option><option>Maintenance</option>
                         </select></div>
-                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "4px" }}>Add Trail</button>
+                      <button type="submit" className="luxury-btn-primary" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginTop: "4px" }}>Add Trail</button>
                     </form>
                   </div>
                 </div>
