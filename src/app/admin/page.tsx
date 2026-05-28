@@ -21,6 +21,7 @@ import {
   DollarSign,
   Briefcase,
   AlertTriangle,
+  Wrench,
   ChevronLeft,
   ChevronRight,
   Heart,
@@ -253,14 +254,15 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     addSpace,
     updateSpaceDetails,
     deleteSpace,
-    convertLeadToBooking
+    convertLeadToBooking,
+    additionalServices
   } = useGaarlandz();
 
   // Navigation Sidebar States
   const [activeAdminSubTab, setActiveAdminSubTab] = useState<
     "overview" | "calendar" | "bookings" | "leads" | "spaces" | "decor_team" | "catering_team" | 
     "photo_team" | "bridal_amenities" | "kids_area" | "deadlines" | "payments" | 
-    "calculator" | "reviews" | "settings"
+    "calculator" | "reviews" | "settings" | "maintenance"
   >("overview");
 
   const [sidebarCollapsible, setSidebarCollapsible] = useState(false);
@@ -450,6 +452,26 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
   const [calcPhotography, setCalcPhotography] = useState(35000);
   const [calcServicesSelected, setCalcServicesSelected] = useState<string[]>(["srv-valet"]);
 
+  // Maintenance states
+  const [maintenanceRecords, setMaintenanceRecords] = useState([
+    { id: "MNT-001", targetType: "Property", targetName: "Open Wedding Venue", issue: "Lush Floral Arches drip irrigation check & structural mandate alignment", scheduledDate: "2026-05-29", supervisor: "Ramesh Selvan", status: "In Progress", cost: 12000, priority: "High" },
+    { id: "MNT-002", targetType: "Service", targetName: "VIP Valet Parking Management", issue: "Radio system battery replacement & security patrol vehicles calibration", scheduledDate: "2026-05-30", supervisor: "Velu Swamy", status: "Scheduled", cost: 4500, priority: "Normal" },
+    { id: "MNT-003", targetType: "Property", targetName: "Kids Play Area", issue: "Inflatable bounce castle safety net replacement & slides sanitization", scheduledDate: "2026-05-27", supervisor: "Gopal Swamy", status: "Completed", cost: 8500, priority: "High" },
+    { id: "MNT-004", targetType: "Service", targetName: "High-Definition LED Backdrop Wall", issue: "Dead pixel mapping test & modular grid cable safety certification", scheduledDate: "2026-06-02", supervisor: "Velu Swamy", status: "Scheduled", cost: 15000, priority: "Medium" }
+  ]);
+  const [showMntModal, setShowMntModal] = useState(false);
+  const [editingMntId, setEditingMntId] = useState<string | null>(null);
+  const [mntTargetType, setMntTargetType] = useState<"Property" | "Service">("Property");
+  const [mntTargetName, setMntTargetName] = useState("");
+  const [mntIssue, setMntIssue] = useState("");
+  const [mntScheduledDate, setMntScheduledDate] = useState("");
+  const [mntSupervisor, setMntSupervisor] = useState("");
+  const [mntStatus, setMntStatus] = useState("Scheduled");
+  const [mntCost, setMntCost] = useState(0);
+  const [mntPriority, setMntPriority] = useState("Normal");
+  const [mntFilterType, setMntFilterType] = useState<"All" | "Property" | "Service">("All");
+  const [mntFilterStatus, setMntFilterStatus] = useState<"All" | "Scheduled" | "In Progress" | "Completed">("All");
+
   const sidebarLinks = [
     { id: "overview", label: "Overview", icon: Sliders },
     { id: "calendar", label: "Celebration Calendar", icon: Calendar },
@@ -463,6 +485,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     { id: "kids_area", label: "Kids Area", icon: Smile },
     { id: "deadlines", label: "Deadlines & Workflow", icon: Clock },
     { id: "payments", label: "Payments & Finance", icon: DollarSign },
+    { id: "maintenance", label: "Maintenance Studio", icon: Wrench },
     { id: "calculator", label: "Event Cost Calculator", icon: Calculator },
     { id: "reviews", label: "Reviews", icon: Star },
     { id: "settings", label: "Settings", icon: Sliders }
@@ -674,6 +697,50 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
     setBridalButler(s.butler);
     setBridalNotes(s.notes);
     setShowBridalModal(true);
+  };
+
+  const handleMntSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mntTargetName || !mntIssue || !mntScheduledDate || !mntSupervisor) return;
+
+    if (editingMntId) {
+      setMaintenanceRecords(maintenanceRecords.map(r => r.id === editingMntId ? {
+        id: r.id, targetType: mntTargetType, targetName: mntTargetName, issue: mntIssue,
+        scheduledDate: mntScheduledDate, supervisor: mntSupervisor, status: mntStatus, cost: mntCost, priority: mntPriority
+      } : r));
+      alert("Maintenance log record synced successfully!");
+    } else {
+      setMaintenanceRecords([...maintenanceRecords, {
+        id: `MNT-${Math.floor(100 + Math.random() * 900)}`,
+        targetType: mntTargetType, targetName: mntTargetName, issue: mntIssue,
+        scheduledDate: mntScheduledDate, supervisor: mntSupervisor, status: mntStatus, cost: mntCost, priority: mntPriority
+      }]);
+      alert("New operational maintenance supervisor task registered successfully!");
+    }
+
+    // Reset Form
+    setEditingMntId(null);
+    setMntTargetName("");
+    setMntIssue("");
+    setMntScheduledDate("");
+    setMntSupervisor("");
+    setMntStatus("Scheduled");
+    setMntCost(0);
+    setMntPriority("Normal");
+    setShowMntModal(false);
+  };
+
+  const startEditMnt = (mnt: any) => {
+    setEditingMntId(mnt.id);
+    setMntTargetType(mnt.targetType);
+    setMntTargetName(mnt.targetName);
+    setMntIssue(mnt.issue);
+    setMntScheduledDate(mnt.scheduledDate);
+    setMntSupervisor(mnt.supervisor);
+    setMntStatus(mnt.status);
+    setMntCost(mnt.cost);
+    setMntPriority(mnt.priority);
+    setShowMntModal(true);
   };
 
   const handleKidsSubmit = (e: React.FormEvent) => {
@@ -1182,14 +1249,28 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                         <td style={{ padding: "12px" }}>{b.guestCount}</td>
                         <td style={{ padding: "12px" }}>₹{b.pricing.total.toLocaleString()}</td>
                         <td style={{ padding: "12px" }}>
-                          <span style={{
-                            padding: "4px 8px",
-                            borderRadius: "12px",
-                            fontSize: "0.65rem",
-                            fontWeight: "700",
-                            backgroundColor: b.status === "Confirmed" ? "rgba(198, 161, 91, 0.12)" : "rgba(0,0,0,0.06)",
-                            color: b.status === "Confirmed" ? "#C6A15B" : "#171717"
-                          }}>{b.status}</span>
+                          <select 
+                            value={b.status} 
+                            onChange={e => updateBookingStatus(b.id, e.target.value as any)} 
+                            style={{ 
+                              fontSize: "0.75rem", 
+                              padding: "4px 8px", 
+                              borderRadius: "8px", 
+                              border: "1px solid rgba(198,161,91,0.25)", 
+                              outline: "none",
+                              backgroundColor: b.status === "Confirmed" ? "rgba(198, 161, 91, 0.08)" : (b.status === "Inquiry" ? "rgba(0,0,0,0.03)" : "rgba(40,167,69,0.06)"),
+                              color: b.status === "Confirmed" ? "#C6A15B" : (b.status === "Inquiry" ? "#171717" : "#28A745"),
+                              fontWeight: "600",
+                              cursor: "pointer"
+                            }}
+                          >
+                            <option value="Inquiry">Inquiry (Pending Approval)</option>
+                            <option value="Confirmed">Confirmed (Approved)</option>
+                            <option value="Decor Planning">Decor Planning</option>
+                            <option value="Event Preparation">Event Preparation</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
                         </td>
                         <td style={{ padding: "12px", textAlign: "center" }}>
                           <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
@@ -2386,6 +2467,7 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                   <div>
                     <label style={{ fontSize: "0.7rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Catering Tier (Price per Guest)</label>
                     <select value={calcCatering} onChange={(e) => setCalcCatering(parseInt(e.target.value))} style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.1)" }}>
+                      <option value="0">None (₹0/Guest)</option>
                       <option value="800">Classic Buffet (₹800/Guest)</option>
                       <option value="1200">Imperial Buffet (₹1,200/Guest)</option>
                       <option value="1800">Grand Royal Sovereign (₹1,800/Guest)</option>
@@ -2457,6 +2539,226 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ==============================================================
+              14.5 MAINTENANCE STUDIO — Service & Property Upkeep
+              ============================================================== */}
+          {activeAdminSubTab === "maintenance" && (
+            <div className="fade-in-reveal" style={{ display: "flex", flexDirection: "column", gap: "28px", textAlign: "left" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <h2 style={{ fontSize: "1.8rem", fontFamily: "var(--font-serif)", color: "#171717" }}>Service & Property Maintenance Studio</h2>
+                  <p style={{ color: "#5A5A5A", fontSize: "0.85rem", marginTop: "4px" }}>Supervise, log, and audit operational upkeep tasks for estate properties and signature guest services.</p>
+                </div>
+                <button onClick={() => { setEditingMntId(null); setMntTargetName(spaces[0]?.name || ""); setShowMntModal(true); }} className="luxury-btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                  <Plus size={15} /> Add Upkeep Entry
+                </button>
+              </div>
+
+              {/* Maintenance Statistics Row */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
+                <div className="luxury-card" style={{ borderLeft: "4px solid #C6A15B" }}>
+                  <span style={{ fontSize: "0.65rem", color: "#5A5A5A", textTransform: "uppercase", fontWeight: "700" }}>Total Maintenance Cost</span>
+                  <strong style={{ display: "block", fontSize: "1.5rem", color: "#171717", marginTop: "4px" }}>
+                    ₹{maintenanceRecords.reduce((sum, r) => sum + r.cost, 0).toLocaleString()}
+                  </strong>
+                </div>
+                <div className="luxury-card" style={{ borderLeft: "4px solid #28A745" }}>
+                  <span style={{ fontSize: "0.65rem", color: "#5A5A5A", textTransform: "uppercase", fontWeight: "700" }}>Completed Audits</span>
+                  <strong style={{ display: "block", fontSize: "1.5rem", color: "#28A745", marginTop: "4px" }}>
+                    {maintenanceRecords.filter(r => r.status === "Completed").length} Done
+                  </strong>
+                </div>
+                <div className="luxury-card" style={{ borderLeft: "4px solid #FD7E14" }}>
+                  <span style={{ fontSize: "0.65rem", color: "#5A5A5A", textTransform: "uppercase", fontWeight: "700" }}>Active Upkeeps Underway</span>
+                  <strong style={{ display: "block", fontSize: "1.5rem", color: "#FD7E14", marginTop: "4px" }}>
+                    {maintenanceRecords.filter(r => r.status === "In Progress").length} Active
+                  </strong>
+                </div>
+                <div className="luxury-card" style={{ borderLeft: "4px solid #DC3545" }}>
+                  <span style={{ fontSize: "0.65rem", color: "#5A5A5A", textTransform: "uppercase", fontWeight: "700" }}>High Priority Tasks</span>
+                  <strong style={{ display: "block", fontSize: "1.5rem", color: "#DC3545", marginTop: "4px" }}>
+                    {maintenanceRecords.filter(r => r.priority === "High" && r.status !== "Completed").length} Critical
+                  </strong>
+                </div>
+              </div>
+
+              {/* Filters Header Panel */}
+              <div className="luxury-card" style={{ padding: "16px 20px", display: "flex", flexWrap: "wrap", gap: "16px", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  <div>
+                    <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px", color: "#5A5A5A" }}>Filter Asset Type</label>
+                    <select value={mntFilterType} onChange={e => setMntFilterType(e.target.value as any)} style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.8rem", backgroundColor: "#fff" }}>
+                      <option value="All">All Assets</option>
+                      <option value="Property">Properties Only</option>
+                      <option value="Service">Services Only</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px", color: "#5A5A5A" }}>Filter Operations Status</label>
+                    <select value={mntFilterStatus} onChange={e => setMntFilterStatus(e.target.value as any)} style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.8rem", backgroundColor: "#fff" }}>
+                      <option value="All">All Statuses</option>
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                </div>
+                <span style={{ fontSize: "0.75rem", color: "#5A5A5A", fontWeight: "600" }}>
+                  Showing {maintenanceRecords.filter(r => (mntFilterType === "All" || r.targetType === mntFilterType) && (mntFilterStatus === "All" || r.status === mntFilterStatus)).length} operational logs
+                </span>
+              </div>
+
+              {/* Main Ledger Table */}
+              <div className="luxury-card" style={{ padding: "0", overflow: "hidden" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem", minWidth: isMobile ? "650px" : "auto" }}>
+                    <thead>
+                      <tr style={{ backgroundColor: "rgba(198,161,91,0.04)", borderBottom: "1px solid rgba(198,161,91,0.15)" }}>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>ID</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Asset Category</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Asset Target Name</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Operational Issue / Task</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Audit Date</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Supervisor</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Cost</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Priority</th>
+                        <th style={{ padding: "12px 16px", textAlign: "center" }}>Status</th>
+                        <th style={{ padding: "12px 16px", textAlign: "center" }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {maintenanceRecords
+                        .filter(r => (mntFilterType === "All" || r.targetType === mntFilterType) && (mntFilterStatus === "All" || r.status === mntFilterStatus))
+                        .map(r => (
+                          <tr key={r.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                            <td style={{ padding: "14px 16px" }}><strong>{r.id}</strong></td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <span style={{
+                                padding: "4px 8px", borderRadius: "6px", fontSize: "0.68rem", fontWeight: "700",
+                                backgroundColor: r.targetType === "Property" ? "rgba(198,161,91,0.1)" : "rgba(0,123,255,0.06)",
+                                color: r.targetType === "Property" ? "#C6A15B" : "#007BFF"
+                              }}>
+                                {r.targetType}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 16px" }}><strong>{r.targetName}</strong></td>
+                            <td style={{ padding: "14px 16px", color: "#3A3A3A", maxWidth: "250px" }}>{r.issue}</td>
+                            <td style={{ padding: "14px 16px" }}>{r.scheduledDate}</td>
+                            <td style={{ padding: "14px 16px" }}>{r.supervisor}</td>
+                            <td style={{ padding: "14px 16px", fontWeight: "700" }}>₹{r.cost.toLocaleString()}</td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <span style={{
+                                padding: "3px 6px", borderRadius: "6px", fontSize: "0.65rem", fontWeight: "700",
+                                backgroundColor: r.priority === "High" ? "rgba(244,67,54,0.08)" : r.priority === "Medium" ? "rgba(253,126,20,0.06)" : "rgba(0,0,0,0.05)",
+                                color: r.priority === "High" ? "#F44336" : r.priority === "Medium" ? "#FD7E14" : "#5A5A5A"
+                              }}>
+                                {r.priority}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <span style={{
+                                padding: "4px 8px", borderRadius: "8px", fontSize: "0.68rem", fontWeight: "700",
+                                backgroundColor: r.status === "Completed" ? "rgba(40,167,69,0.1)" : r.status === "In Progress" ? "rgba(253,126,20,0.08)" : "rgba(0,0,0,0.06)",
+                                color: r.status === "Completed" ? "#28A745" : r.status === "In Progress" ? "#FD7E14" : "#171717"
+                              }}>{r.status}</span>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                                <button onClick={() => startEditMnt(r)} className="luxury-btn-outline" style={{ padding: "4px 8px", fontSize: "0.65rem" }}>
+                                  <Edit3 size={11} /> Edit
+                                </button>
+                                <button onClick={() => setMaintenanceRecords(maintenanceRecords.filter(x => x.id !== r.id))} style={{ padding: "4px 8px", fontSize: "0.65rem", backgroundColor: "rgba(244,67,54,0.08)", color: "#F44336", border: "1px solid rgba(244,67,54,0.2)", borderRadius: "8px", cursor: "pointer" }}>
+                                  <Trash2 size={11} /> Dismantle
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* DRAGGABLE ADD / EDIT UPKEEP MODAL */}
+              {showMntModal && (
+                <DraggableModal title={editingMntId ? "Modify Maintenance Upkeep Log" : "Add Service & Property Upkeep Log"} onClose={() => setShowMntModal(false)} maxWidth="520px">
+                  <form onSubmit={handleMntSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Asset Target Type *</label>
+                        <select value={mntTargetType} onChange={e => {
+                          const type = e.target.value as "Property" | "Service";
+                          setMntTargetType(type);
+                          if (type === "Property") {
+                            setMntTargetName(spaces[0]?.name || "");
+                          } else {
+                            setMntTargetName(additionalServices[0]?.name || "");
+                          }
+                        }} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                          <option value="Property">Property / Venue Space</option>
+                          <option value="Service">Supervised Service</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Select Asset Name *</label>
+                        <select value={mntTargetName} onChange={e => setMntTargetName(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                          {mntTargetType === "Property"
+                            ? spaces.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)
+                            : additionalServices.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)
+                          }
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Scheduled Audit Date *</label>
+                        <input required type="date" value={mntScheduledDate} onChange={e => setMntScheduledDate(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Operations Supervisor *</label>
+                        <input required type="text" value={mntSupervisor} onChange={e => setMntSupervisor(e.target.value)} placeholder="e.g. Ramesh Selvan" style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Status *</label>
+                        <select value={mntStatus} onChange={e => setMntStatus(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Completed">Completed</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Priority Level</label>
+                        <select value={mntPriority} onChange={e => setMntPriority(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }}>
+                          <option value="Normal">Normal</option>
+                          <option value="Medium">Medium Priority</option>
+                          <option value="High">High / Critical</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Allocated Upkeep Cost (₹) *</label>
+                      <input required type="number" value={mntCost} onChange={e => setMntCost(parseInt(e.target.value) || 0)} style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem" }} />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Specific Maintenance Brief details *</label>
+                      <textarea required value={mntIssue} onChange={e => setMntIssue(e.target.value)} placeholder="e.g. Electrical wiring load diagnostics, safety net replacements, modular alignments..." style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.12)", fontSize: "0.85rem", height: "70px", resize: "none" }} />
+                    </div>
+
+                    <button type="submit" className="luxury-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "8px" }}>
+                      {editingMntId ? "Save Upkeep Audit Alignment" : "Register Maintenance Log"}
+                    </button>
+                  </form>
+                </DraggableModal>
+              )}
             </div>
           )}
 

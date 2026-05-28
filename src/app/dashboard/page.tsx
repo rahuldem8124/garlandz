@@ -47,7 +47,11 @@ export default function HostPlannerDashboard() {
   };
 
   const daysRemaining = activeBooking ? calculateDaysLeft(activeBooking.date) : 35;
-  const activeSpace = activeBooking ? spaces.find(s => s.id === activeBooking.spaceId) : spaces[0];
+  const activeSpaces = activeBooking ? spaces.filter(s => (activeBooking.spaceId || "").split(",").includes(s.id)) : [spaces[0]];
+  const activeSpace = {
+    ...(activeSpaces[0] || spaces[0]),
+    name: activeSpaces.map(s => s.name).join(" + ") || (spaces[0]?.name || "")
+  };
 
   const handleChecklistToggle = (taskId: string, currentVal: boolean) => {
     if (!activeBooking) return;

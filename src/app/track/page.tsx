@@ -185,7 +185,7 @@ function TrackBookingContent() {
                   <div>
                     <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", display: "block" }}>Secured Venue Area</span>
                     <span style={{ fontSize: "0.9rem", fontWeight: "600" }}>
-                      {spaces.find(s => s.id === activeBooking.spaceId)?.name || "Gaarlandz Area"}
+                      {spaces.filter(s => (activeBooking.spaceId || "").split(",").includes(s.id)).map(s => s.name).join(" + ") || "Gaarlandz Area"}
                     </span>
                   </div>
                 </div>

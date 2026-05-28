@@ -323,6 +323,7 @@ function CelebrationGateway() {
   // ==========================================
   const [wizardStep, setWizardStep] = useState(1);
   const [wizSpace, setWizSpace] = useState("open-wedding");
+  const [wizFamilyRooms, setWizFamilyRooms] = useState(1);
   const [wizGuests, setWizGuests] = useState(300);
   const [wizDate, setWizDate] = useState("");
   const [wizSession, setWizSession] = useState<"Morning" | "Evening" | "Full Day">("Morning");
@@ -372,7 +373,20 @@ function CelebrationGateway() {
   // FAQ state
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
 
-  const activeSpaceObj = spaces.find(s => s.id === wizSpace) || spaces[0];
+  const activeSpaces = spaces.filter(s => (wizSpace || "").split(",").map(id => id.split(":")[0]).includes(s.id));
+  const activeSpaceObj = {
+    id: wizSpace,
+    name: activeSpaces.map(s => {
+      if (s.id === "bride-groom-suite") {
+        const matchingId = (wizSpace || "").split(",").find(id => id.startsWith("bride-groom-suite"));
+        const rooms = matchingId ? (parseInt(matchingId.split(":")[1]) || 1) : 1;
+        return `${s.name} (${rooms} Rooms)`;
+      }
+      return s.name;
+    }).join(" + ") || (spaces[0]?.name || ""),
+    image: activeSpaces[0]?.image || (spaces[0]?.image || ""),
+    capacity: activeSpaces.length > 0 ? Math.max(...activeSpaces.map(s => s.capacity)) : (spaces[0]?.capacity || 1000)
+  };
   const dynamicPricing = calculateDynamicPrice(wizSpace, wizDate, wizGuests, wizSession, wizServices, EVENT_THEMES[activeTheme]?.subtotal);
 
   const handleWizServiceToggle = (srvId: string) => {
@@ -424,7 +438,7 @@ function CelebrationGateway() {
     }, true);
 
     if (res.success && res.bookingId) {
-      setCreatedGaarId("GAAR1026"); // Explicit ID request
+      setCreatedGaarId(res.bookingId);
       setRazorpayOpen(false);
       setWizardStep(8);
     } else {
@@ -860,30 +874,79 @@ function CelebrationGateway() {
                   {/* STEP 2: VENUE AREA */}
                   {wizardStep === 2 && (
                     <div key="step-2" className="wizard-step-container" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                      <h4 style={{ fontSize: "1.6rem", fontFamily: "var(--font-serif)", color: "#171717", marginBottom: "8px" }}>Select Signature Venue Space</h4>
-                      {spaces.map(sp => (
-                        <div 
-                          key={sp.id} 
-                          onClick={() => setWizSpace(sp.id)}
-                          style={{
-                            padding: "16px",
-                            borderRadius: "14px",
-                            border: wizSpace === sp.id ? "2px solid #C6A15B" : "1px solid rgba(0,0,0,0.06)",
-                            backgroundColor: wizSpace === sp.id ? "rgba(198, 161, 91, 0.08)" : "#FFFFFF",
-                            cursor: "pointer",
-                            display: "flex",
-                            gap: "12px",
-                            alignItems: "center",
-                            transition: "all 0.3s"
-                          }}
-                        >
-                          <img src={sp.image} alt="" style={{ width: "60px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
-                          <div style={{ textAlign: "left" }}>
-                            <strong style={{ fontSize: "0.85rem", display: "block", color: "#171717" }}>{sp.name}</strong>
-                            <span style={{ fontSize: "0.7rem", color: "#5A5A5A" }}>Price: ₹{sp.basePrice.toLocaleString()} | Capacity: {sp.capacity} Guests</span>
+                      <div>
+                        <h4 style={{ fontSize: "1.6rem", fontFamily: "var(--font-serif)", color: "#171717", marginBottom: "4px" }}>Select Signature Venue Spaces</h4>
+                        <p style={{ fontSize: "0.85rem", color: "#5A5A5A", marginBottom: "8px" }}>Select one or more signature spaces to custom bundle your luxury celebration layout.</p>
+                      </div>
+                      {spaces.map(sp => {
+                        const isSpaceSelected = (wizSpace || "").split(",").map(id => id.split(":")[0]).includes(sp.id);
+                        return (
+                          <div 
+                            key={sp.id} 
+                            onClick={() => {
+                              const currentSelected = (wizSpace || "").split(",").filter(Boolean);
+                              const strippedSelected = currentSelected.map(id => id.split(":")[0]);
+                              if (strippedSelected.includes(sp.id)) {
+                                if (currentSelected.length > 1) {
+                                  setWizSpace(currentSelected.filter(id => id.split(":")[0] !== sp.id).join(","));
+                                }
+                              } else {
+                                const newId = sp.id === "bride-groom-suite" ? `bride-groom-suite:${wizFamilyRooms}` : sp.id;
+                                setWizSpace([...currentSelected, newId].join(","));
+                              }
+                            }}
+                            style={{
+                              padding: "16px",
+                              borderRadius: "14px",
+                              border: isSpaceSelected ? "2px solid #C6A15B" : "1px solid rgba(0,0,0,0.06)",
+                              backgroundColor: isSpaceSelected ? "rgba(198, 161, 91, 0.08)" : "#FFFFFF",
+                              cursor: "pointer",
+                              display: "flex",
+                              gap: "12px",
+                              alignItems: "center",
+                              transition: "all 0.3s"
+                            }}
+                          >
+                            <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                              <div style={{ display: "flex", gap: "12px", alignItems: "center", width: "100%" }}>
+                                <img src={sp.image} alt="" style={{ width: "60px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
+                                <div style={{ textAlign: "left", flex: 1 }}>
+                                  <strong style={{ fontSize: "0.85rem", display: "block", color: "#171717" }}>{sp.name}</strong>
+                                  <span style={{ fontSize: "0.7rem", color: "#5A5A5A" }}>Price: ₹{sp.basePrice.toLocaleString()} | Capacity: {sp.capacity} Guests</span>
+                                </div>
+                                {isSpaceSelected && (
+                                  <span style={{ fontSize: "0.7rem", color: "#C6A15B", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" }}>
+                                    ✓ Selected
+                                  </span>
+                                )}
+                              </div>
+                              {isSpaceSelected && sp.id === "bride-groom-suite" && (
+                                <div style={{ marginTop: "12px", borderTop: "1px dashed rgba(198,161,91,0.25)", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={e => e.stopPropagation()}>
+                                  <label style={{ fontSize: "0.72rem", color: "#5A5A5A", fontWeight: "600" }}>Extra family rooms along with suite:</label>
+                                  <select 
+                                    value={wizFamilyRooms} 
+                                    onChange={e => {
+                                      const rooms = parseInt(e.target.value) || 1;
+                                      setWizFamilyRooms(rooms);
+                                      const currentSelected = (wizSpace || "").split(",").filter(Boolean);
+                                      const updated = currentSelected.map(id => id.startsWith("bride-groom-suite") ? `bride-groom-suite:${rooms}` : id);
+                                      setWizSpace(updated.join(","));
+                                    }}
+                                    style={{ padding: "4px 8px", borderRadius: "8px", border: "1px solid rgba(198,161,91,0.3)", fontSize: "0.75rem", outline: "none", backgroundColor: "#FFFFFF" }}
+                                  >
+                                    <option value="1">Suite Only (1 Room)</option>
+                                    <option value="2">Suite + 1 Family Room (+₹10,000)</option>
+                                    <option value="3">Suite + 2 Family Rooms (+₹20,000)</option>
+                                    <option value="4">Suite + 3 Family Rooms (+₹30,000)</option>
+                                    <option value="5">Suite + 4 Family Rooms (+₹40,000)</option>
+                                    <option value="6">Suite + 5 Family Rooms (+₹50,000)</option>
+                                  </select>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 

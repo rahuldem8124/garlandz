@@ -247,7 +247,7 @@ const INITIAL_SPACES: VenueSpace[] = [
     capacity: 150,
     basePrice: 30000,
     description: "An exquisite outdoor recreation playground complete with security supervisors, dynamic slides, and luxury custom kids catering counters.",
-    image: "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=1200",
     category: "Kids Zone"
   },
   {
@@ -648,6 +648,34 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, []);
 
+  // Real-time synchronization across different tabs/windows via storage event
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "gaarlandz_storage_v1" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.spaces) setSpaces(parsed.spaces);
+          if (parsed.bookings) setBookings(parsed.bookings);
+          if (parsed.leads) setLeads(parsed.leads);
+          if (parsed.siteVisits) setSiteVisits(parsed.siteVisits);
+          if (parsed.operations) setOperations(parsed.operations);
+          if (parsed.staff) setStaff(parsed.staff);
+          if (parsed.vendors) setVendors(parsed.vendors);
+          if (parsed.documents) setDocuments(parsed.documents);
+          if (parsed.budgets) setBudgets(parsed.budgets);
+          if (parsed.notifications) setNotifications(parsed.notifications);
+          if (parsed.automationLogs) setAutomationLogs(parsed.automationLogs);
+        } catch (err) {
+          console.error("Local storage sync error:", err);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   // ==========================================
   // HEATMAP PARAMETERS HELPERS
   // ==========================================
@@ -715,8 +743,29 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     selectedServiceIds: string[],
     themeBasePrice?: number
   ): Booking["pricing"] => {
-    const space = spaces.find((s) => s.id === spaceId) || INITIAL_SPACES[0];
-    const base = themeBasePrice !== undefined ? themeBasePrice : space.basePrice;
+    let base = 0;
+    if (themeBasePrice !== undefined) {
+      base = themeBasePrice;
+    } else {
+      const spaceIds = (spaceId || "").split(",");
+      spaceIds.forEach(id => {
+        if (id.startsWith("bride-groom-suite")) {
+          const rooms = parseInt(id.split(":")[1]) || 1;
+          const space = spaces.find((s) => s.id === "bride-groom-suite");
+          if (space) {
+            base += space.basePrice + (rooms - 1) * 10000;
+          }
+        } else {
+          const space = spaces.find((s) => s.id === id);
+          if (space) {
+            base += space.basePrice;
+          }
+        }
+      });
+      if (base === 0) {
+        base = spaces[0]?.basePrice || 150000;
+      }
+    }
 
     // 1. Session Surcharges
     let sessionSurcharge = 0;
@@ -825,8 +874,12 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const newBooking: Booking = {
       ...bookingData,
       id: generatedId,
-      pricing,
-      status: isAdvancePayment ? "Confirmed" : "Inquiry",
+      pricing: {
+        ...pricing,
+        advancePaid: isAdvancePayment ? 50000 : 0,
+        remainingBalance: isAdvancePayment ? (pricing.total - 50000) : pricing.total
+      },
+      status: "Inquiry", // All bookings start as Inquiry pending Admin explicit approval
       checklist: MOCK_CHECKLIST.map((item) => ({ ...item, completed: false })),
       createdAt: new Date().toISOString()
     };
