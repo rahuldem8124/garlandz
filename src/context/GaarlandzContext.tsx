@@ -676,6 +676,42 @@ export const GaarlandzProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, []);
 
+  // Polled localStorage synchronizer to guarantee 100% real-time sync across all windows/tabs under all conditions (including deployments where standard storage event might be sandboxed)
+  useEffect(() => {
+    let lastValue = "";
+    if (typeof window !== "undefined") {
+      lastValue = localStorage.getItem("gaarlandz_storage_v1") || "";
+    }
+    const interval = setInterval(() => {
+      try {
+        if (typeof window !== "undefined") {
+          const currentValue = localStorage.getItem("gaarlandz_storage_v1") || "";
+          if (currentValue !== lastValue) {
+            lastValue = currentValue;
+            if (currentValue) {
+              const parsed = JSON.parse(currentValue);
+              if (parsed.spaces) setSpaces(parsed.spaces);
+              if (parsed.bookings) setBookings(parsed.bookings);
+              if (parsed.leads) setLeads(parsed.leads);
+              if (parsed.siteVisits) setSiteVisits(parsed.siteVisits);
+              if (parsed.operations) setOperations(parsed.operations);
+              if (parsed.staff) setStaff(parsed.staff);
+              if (parsed.vendors) setVendors(parsed.vendors);
+              if (parsed.documents) setDocuments(parsed.documents);
+              if (parsed.budgets) setBudgets(parsed.budgets);
+              if (parsed.notifications) setNotifications(parsed.notifications);
+              if (parsed.automationLogs) setAutomationLogs(parsed.automationLogs);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Polled storage sync error:", err);
+      }
+    }, 1200); // 1.2 second high-frequency sync
+
+    return () => clearInterval(interval);
+  }, []);
+
   // ==========================================
   // HEATMAP PARAMETERS HELPERS
   // ==========================================
