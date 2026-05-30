@@ -92,6 +92,11 @@ export default function Navbar() {
 
         {/* RIGHT: Actions */}
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <Link href="/dashboard">
+            <button className="luxury-btn-outline" style={{ borderColor: "#C6A15B", color: "#C6A15B" }}>
+              My Dashboard
+            </button>
+          </Link>
           <Link href="/admin-login">
             <button className="luxury-btn-outline">
               Admin Access

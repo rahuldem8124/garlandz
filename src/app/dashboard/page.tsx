@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGaarlandz } from "@/context/GaarlandzContext";
+import { generateAndPrintInvoice } from "@/utils/invoiceGenerator";
 import { 
   Sparkles, 
   Clock, 
@@ -60,7 +61,7 @@ export default function HostPlannerDashboard() {
 
   const handleDownloadInvoice = () => {
     if (!activeBooking) return;
-    alert(`Downloaded invoice file: invoice_${activeBooking.id}.pdf\nSecured total amount: ₹${activeBooking.pricing.total.toLocaleString()}`);
+    generateAndPrintInvoice(activeBooking, spaces);
   };
 
   return (

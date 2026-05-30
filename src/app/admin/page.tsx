@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGaarlandz, Booking, Lead, VenueSpace, KanbanTask, StaffMember, Vendor } from "@/context/GaarlandzContext";
+import { generateAndPrintInvoice } from "@/utils/invoiceGenerator";
 import { 
   Users, 
   Flower,
@@ -2376,6 +2377,31 @@ function GaarlandzSidebarConsole({ onLogout }: SidebarConsoleProps) {
                         color: selectedPaymentDetail.status === "Successful" ? "#28A745" : "#C6A15B"
                       }}>{selectedPaymentDetail.status}</span>
                     </div>
+
+                    <button 
+                      onClick={() => {
+                        const targetBooking = bookings.find(b => b.id === selectedPaymentDetail.bookingId) || {
+                          id: selectedPaymentDetail.bookingId || "GAAR-TEMP",
+                          customerName: selectedPaymentDetail.customerName,
+                          customerPhone: "+91 80127 00700",
+                          customerEmail: "client@example.com",
+                          date: selectedPaymentDetail.date || new Date().toISOString().split("T")[0],
+                          eventType: "Grand Royal Celebration",
+                          guestCount: 200,
+                          sessionTime: "Full Day",
+                          pricing: {
+                            total: selectedPaymentDetail.amount,
+                            advancePaid: selectedPaymentDetail.amount,
+                            remainingBalance: 0,
+                          }
+                        };
+                        generateAndPrintInvoice(targetBooking, spaces, selectedPaymentDetail);
+                      }}
+                      className="luxury-btn-primary" 
+                      style={{ width: "100%", marginTop: "16px", display: "flex", gap: "8px", justifyContent: "center", alignItems: "center" }}
+                    >
+                      <Download size={16} /> Download Signed Invoice
+                    </button>
                   </div>
                 </DraggableModal>
               )}
