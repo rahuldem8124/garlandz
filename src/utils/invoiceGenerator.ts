@@ -231,8 +231,8 @@ export function generateAndPrintInvoice(booking: InvoiceBooking, spaces: any[], 
     </head>
     <body>
       <div class="no-print-actions">
-        <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
-        <button class="btn btn-secondary" onclick="window.close()">Close Window</button>
+        <button class="btn btn-primary" onclick="window.print()">Print Invoice</button>
+        <button class="btn btn-secondary" onclick="downloadInvoiceHTML()">Download Invoice</button>
       </div>
 
       <div class="invoice-box">
@@ -341,6 +341,20 @@ export function generateAndPrintInvoice(booking: InvoiceBooking, spaces: any[], 
       </div>
 
       <script>
+        function downloadInvoiceHTML() {
+          const clone = document.documentElement.cloneNode(true);
+          const actionsDiv = clone.querySelector('.no-print-actions');
+          if (actionsDiv) actionsDiv.remove();
+          
+          const blob = new Blob([clone.outerHTML], { type: 'text/html' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'Invoice_${booking.id}.html';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+
         // Auto trigger print dialog on load
         window.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
