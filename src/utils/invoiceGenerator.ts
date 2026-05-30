@@ -40,6 +40,7 @@ export function generateAndPrintInvoice(booking: InvoiceBooking, spaces: any[], 
     <head>
       <meta charset="UTF-8">
       <title>Invoice - ${booking.id}</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:wght@300;400;600;700&display=swap');
         
@@ -232,7 +233,7 @@ export function generateAndPrintInvoice(booking: InvoiceBooking, spaces: any[], 
     <body>
       <div class="no-print-actions">
         <button class="btn btn-primary" onclick="window.print()">Print Invoice</button>
-        <button class="btn btn-secondary" onclick="downloadInvoiceHTML()">Download Invoice</button>
+        <button class="btn btn-secondary" onclick="downloadInvoicePDF()">Download PDF Invoice</button>
       </div>
 
       <div class="invoice-box">
@@ -341,18 +342,16 @@ export function generateAndPrintInvoice(booking: InvoiceBooking, spaces: any[], 
       </div>
 
       <script>
-        function downloadInvoiceHTML() {
-          const clone = document.documentElement.cloneNode(true);
-          const actionsDiv = clone.querySelector('.no-print-actions');
-          if (actionsDiv) actionsDiv.remove();
-          
-          const blob = new Blob([clone.outerHTML], { type: 'text/html' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'Invoice_${booking.id}.html';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+        function downloadInvoicePDF() {
+          const element = document.querySelector('.invoice-box');
+          const opt = {
+            margin:       [15, 15],
+            filename:     'Invoice_${booking.id}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(element).save();
         }
 
         // Auto trigger print dialog on load
